@@ -340,13 +340,13 @@ ASALocalRun/
 healthchecksdb
 
 # Python environment
-ODModelBuilderTF/env/
+env/
 
 # Workspace directories
-ODModelBuilderTF/images/
-ODModelBuilderTF/annotations/
-ODModelBuilderTF/trained-model/
-ODModelBuilderTF/exported-model/
-ODModelBuilderTF/build/
-ODModelBuilderTF/ODModelBuilderTF/
-ODModelBuilderTF/ODModelBuilderTF.spec
+images/
+annotations/
+trained-model/
+exported-model/
+build/
+ODModelBuilderTF/
+ODModelBuilderTF.spec
