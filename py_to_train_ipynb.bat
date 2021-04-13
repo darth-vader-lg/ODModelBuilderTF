@@ -1,13 +1,6 @@
 @echo off
 rem Updating of the train.ipynb with the content of the python modules
 setlocal
-set SyncJupyterNotebook="..\SyncJupyterNotebook\SyncJupyterNotebook\bin\Release\net5.0\SyncJupyterNotebook.exe"
-if not exist %SyncJupyterNotebook% (
-  set SyncJupyterNotebook="..\SyncJupyterNotebook\SyncJupyterNotebook\bin\Debug\net5.0\SyncJupyterNotebook.exe"
-  if not exist %SyncJupyterNotebook% (
-    echo the SyncJupyterNotebook executable doesn't exist. Please build the solution.
-    exit 1
-  )
-)
-
+call set_sync_jupyter_notebook_env.bat
+if ERRORLEVEL 1 exit /b %ERRORLEVEL%
 %SyncJupyterNotebook% nb train.ipynb
