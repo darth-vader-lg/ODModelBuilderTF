@@ -20,6 +20,10 @@ class Cfg(object):
     #@markdown The GDrive directory (Colab execution) or the local directory (machine execution) where the exported model will be saved.
     exported_model = 'exported-model' #@param {type:"string"}
     #@markdown ---
+    #@markdown ## Export ONNX:
+    #@markdown Enable exporting of the ONNX model.
+    export_onnx = False #@param {type:"boolean"}
+    #@markdown ---
     #@markdown ## Maximum training steps:
     #@markdown The maximun number of train steps. If < 0 it will be limited by the base model configuration.
     max_train_steps = -1 #@param {type:"integer"}

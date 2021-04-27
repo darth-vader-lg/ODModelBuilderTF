@@ -16,7 +16,7 @@ flags.DEFINE_string ('eval_images_dir', None, 'Path to the directory '
                      'containing the images for evaluate and their labeling xml.')
 flags.DEFINE_integer('batch_size', 0, 'The size of batch. If < 1 it uses the '
                      'value contained in the pipeline configuration file.')
-flags.DEFINE_integer('tensorboard_port', 8080, 'The port of the tensorboard server')
+flags.DEFINE_integer('tensorboard_port', 6006, 'The port of the tensorboard server')
 
 def train_main(unused_argv):
     # Part of code not executed on Colab notebook

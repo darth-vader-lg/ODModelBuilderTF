@@ -99,6 +99,9 @@ def install_object_detection():
         print(f'Installing the object detection api.')
         shutil.copy2('object_detection/packages/tf2/setup.py', '.')
         install('.')
+        # Uninstall this package installed by someother one because incompatible with python >=3.7
+        execute_script(['-m', 'pip', 'uninstall', '-y', 'dataclasses'])
+        # Return to the original directory
         os.chdir(currentDir)
     else:
         print(f'TensorFlow object detection api SHA-1 {Cfg.od_api_git_sha1} is already installed')

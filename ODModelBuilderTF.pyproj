@@ -48,7 +48,6 @@
     <Compile Include="mount_google_drive.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="train.ipynb.py" />
     <Compile Include="export_main.py" />
     <Compile Include="export_parameters.py" />
     <Compile Include="export_environment.py" />
@@ -82,10 +81,11 @@
   <ItemGroup>
     <Content Include="build_exe.bat" />
     <Content Include="install_virtual_environment.bat" />
-    <Content Include="py_to_train_ipynb.bat" />
+    <Content Include="py_to_ODModelBuilderTF_ipynb.bat" />
     <Content Include="requirements.txt" />
-    <Content Include="train.ipynb" />
-    <Content Include="train_ipynb_to_py.bat" />
+    <Content Include="set_sync_jupyter_notebook_env.bat" />
+    <Content Include="ODModelBuilderTF.ipynb" />
+    <Content Include="ODModelBuilderTF_ipynb_to_py.bat" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="env\">

@@ -14,11 +14,7 @@ def init_train_environment(prm: TrainParameters):
     prm     -- the train parameters
     """
     # Set the configuration for Google Colab
-    if ('google.colab' in sys.modules and Cfg.data_on_drive):
-        if (not os.path.exists('/mnt/MyDrive')):
-            print('Mounting the GDrive')
-            from google.colab import drive
-            drive.mount('/mnt')
+    if (os.path.isdir('/content') and os.path.isdir('/mnt/MyDrive')):
         # Check the existence of the train images dir
         gdrive_dir = os.path.join('/mnt', 'MyDrive', prm.train_images_dir)
         if (not os.path.isdir(gdrive_dir)):

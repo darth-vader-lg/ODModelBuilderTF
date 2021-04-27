@@ -23,7 +23,7 @@ class TrainParameters(BaseParameters):
         self._checkpoint_every_n = 1000
         self._record_summaries = True
         self._batch_size = Cfg.batch_size if Cfg.batch_size > 1 else None
-        self._tensorboard_port = 8080
+        self._tensorboard_port = 6006
         self._is_path.extend([
             'pipeline_config_path',
             'checkpoint_dir'])

@@ -8,6 +8,8 @@ except: pass
 # Avoiding the absl error for duplicated flags if run again the cell from a notebook
 allow_flags_override()
 
+flags.DEFINE_bool   ('export_onnx', False, 'Enable exporting of the ONNX model')
+
 def export_main(unused_argv):
     # Part of code not executed on Colab notebook
     def run_py_mode():

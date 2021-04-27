@@ -14,6 +14,7 @@ class ExportParameters(BaseParameters):
         self._pipeline_config_path = os.path.join(self.model_dir, 'pipeline.config')
         self._trained_checkpoint_dir = self.model_dir
         self._output_directory = Cfg.exported_model
+        self._export_onnx = Cfg.export_onnx
         self._is_path.extend([
             'pipeline_config_path',
             'trained_checkpoint_dir',
@@ -31,6 +32,10 @@ class ExportParameters(BaseParameters):
     def output_directory(self): return self._output_directory
     @output_directory.setter
     def output_directory(self, value): self._output_directory = value
+    @property
+    def export_onnx(self): return self._export_onnx
+    @export_onnx.setter
+    def export_onnx(self, value): self._export_onnx = value
 
 ExportParameters.default = ExportParameters.default or ExportParameters()
 
