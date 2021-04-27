@@ -41,6 +41,9 @@
     <Compile Include="default_cfg.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="export_onnx.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="install_virtual_environment.py">
       <SubType>Code</SubType>
     </Compile>

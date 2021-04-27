@@ -27,6 +27,10 @@ def export_main(unused_argv):
         export_parameters.update_flags()
         # Export the model
         exporter_main_v2.main(unused_argv)
+        # Export the ONNX if enabled
+        if (export_parameters.export_onnx):
+            from export_onnx import export_onnx
+            export_onnx(export_parameters)
     def run_notebook_mode():
         # Check if the export directory is specified
         if (not prm.output_directory or len(prm.output_directory) < 1):
