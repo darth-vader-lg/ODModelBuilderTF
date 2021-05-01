@@ -23,9 +23,7 @@ def export_onnx(prm: ExportParameters):
         convert.main()
     finally:
         sys.argv = argv_save
-    pass
 
 if __name__ == '__main__':
     prm = ExportParameters()
     export_onnx(prm)
-

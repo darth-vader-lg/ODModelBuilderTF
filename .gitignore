@@ -350,3 +350,4 @@ exported-model/
 build/
 ODModelBuilderTF/
 ODModelBuilderTF.spec
+/exported-model-ssd-320x320
