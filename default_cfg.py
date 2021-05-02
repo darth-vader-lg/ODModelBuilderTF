@@ -14,15 +14,19 @@ class Cfg(object):
     #@markdown ---
     #@markdown ## Train directory:
     #@markdown The GDrive directory (Colab execution) or the local directory (machine execution) where the checkpoints will be saved.
-    trained_model = 'trained-model' #@param {type:"string"}
+    trained_model_dir = 'trained-model' #@param {type:"string"}
     #@markdown ---
     #@markdown ## Export directory:
     #@markdown The GDrive directory (Colab execution) or the local directory (machine execution) where the exported model will be saved.
-    exported_model = 'exported-model' #@param {type:"string"}
+    exported_model_dir = 'exported-model' #@param {type:"string"}
     #@markdown ---
     #@markdown ## Export ONNX:
-    #@markdown Enable exporting of the ONNX model.
-    export_onnx = False #@param {type:"boolean"}
+    #@markdown The name of the exported ONNX model. It will be in the exported_model_dir
+    exported_onnx = 'saved_model.onnx' #@param {type:"string"}
+    #@markdown ---
+    #@markdown ## Export frozen:
+    #@markdown The name of the exported frozen graph. It will be in the exported_model_dir
+    exported_frozen_graph = 'frozen_graph.pb' #@param {type:"string"}
     #@markdown ---
     #@markdown ## Maximum training steps:
     #@markdown The maximun number of train steps. If < 0 it will be limited by the base model configuration.

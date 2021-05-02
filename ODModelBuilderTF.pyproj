@@ -6,7 +6,7 @@
     <ProjectHome>
     </ProjectHome>
     <StartupFile>main.py</StartupFile>
-    <SearchPath>env\Scripts</SearchPath>
+    <SearchPath>env\Scripts;env\src\tf2onnx\tf2onnx</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>ODModelBuilderTF</Name>
@@ -18,8 +18,7 @@
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <InterpreterArguments>
     </InterpreterArguments>
-    <CommandLineArguments>
-    </CommandLineArguments>
+    <CommandLineArguments>--output_directory exported-model-ssd-320x320 --frozen_graph frozen_graph.pb  --onnx saved_model.onnx --trained_checkpoint_dir=""</CommandLineArguments>
     <Environment>CUDA_VISIBLE_DEVICES=-1
 </Environment>
   </PropertyGroup>
@@ -39,6 +38,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="default_cfg.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="export_frozen_graph.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="export_model_config.py">

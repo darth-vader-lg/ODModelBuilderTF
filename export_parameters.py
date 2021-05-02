@@ -10,15 +10,17 @@ class ExportParameters(BaseParameters):
     def __init__(self):
         """ Constructor """
         super().__init__()
-        self._input_type = 'image_tensor'
         self._pipeline_config_path = os.path.join(self.model_dir, 'pipeline.config')
         self._trained_checkpoint_dir = self.model_dir
-        self._output_directory = Cfg.exported_model
-        self._export_onnx = Cfg.export_onnx
+        self._output_directory = Cfg.exported_model_dir
+        self._onnx = Cfg.exported_onnx
+        self._frozen_graph = Cfg.exported_frozen_graph
         self._is_path.extend([
             'pipeline_config_path',
             'trained_checkpoint_dir',
-            'output_directory'])
+            'output_directory',
+            'onnx_path',
+            'frozen_graph_path'])
     default = None
     @property
     def pipeline_config_path(self): return self._pipeline_config_path
@@ -33,9 +35,13 @@ class ExportParameters(BaseParameters):
     @output_directory.setter
     def output_directory(self, value): self._output_directory = value
     @property
-    def export_onnx(self): return self._export_onnx
-    @export_onnx.setter
-    def export_onnx(self, value): self._export_onnx = value
+    def onnx(self): return self._onnx
+    @onnx.setter
+    def onnx(self, value): self._onnx = value
+    @property
+    def frozen_graph(self): return self._frozen_graph
+    @frozen_graph.setter
+    def frozen_graph(self, value): self._frozen_graph = value
 
 ExportParameters.default = ExportParameters.default or ExportParameters()
 

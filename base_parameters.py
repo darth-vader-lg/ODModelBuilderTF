@@ -14,7 +14,7 @@ class BaseParameters:
     def __init__(self):
         """ Constructor """
         self._model_type = Cfg.model_type or 'SSD ResNet50 V1 FPN 640x640 (RetinaNet50)'
-        self._model_dir = Cfg.trained_model or 'trained-model'
+        self._model_dir = Cfg.trained_model_dir or 'trained-model'
         self._train_images_dir = Cfg.train_images_dir or 'images/train'
         self._eval_images_dir = Cfg.eval_images_dir or 'images/eval'
         self._annotations_dir = 'annotations'
@@ -89,7 +89,8 @@ class BaseParameters:
                 else:
                     flag = prop
                 value = getattr(flags.FLAGS, flag)
-                if (value):
+                prop_value = getattr(self, prop)
+                if (value != prop_value):
                     setattr(self, prop, value)
                     print(f'Written property {prop} with value {value}')
             except:

@@ -30,7 +30,7 @@ def train_main(unused_argv):
         train_parameters = TrainParameters()
         train_parameters.update_values()
         # Check if the numer of train steps is 0
-        if (train_parameters.num_train_steps == 0):
+        if (train_parameters.num_train_steps == 0 or not train_parameters.model_dir):
             return
         init_train_environment(train_parameters)
         download_pretrained_model(train_parameters)

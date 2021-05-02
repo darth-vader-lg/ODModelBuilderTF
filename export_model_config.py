@@ -50,7 +50,7 @@ def get_onnx_tensor_info(tensor):
         }
     return result
 
-def get_meta_graph_def(saved_model, tag_set):
+def get_signature(path_to_pb, tag_set='serve', signature_def='serving_default'):
     """Gets MetaGraphDef from SavedModel.
   
     Returns the MetaGraphDef for the given tag-set and SavedModel directory.
@@ -70,15 +70,26 @@ def get_meta_graph_def(saved_model, tag_set):
         A MetaGraphDef corresponding to the tag-set.
     """
     # Note: Discard empty tags so that "" can mean the empty tag set.
+    # Read the saved model
+    from    tensorflow.core.protobuf import saved_model_pb2
+    from    tensorflow.python.lib.io import file_io
+    saved_model = saved_model_pb2.SavedModel()
+    if (not file_io.file_exists(path_to_pb)):
+        raise IOError(f"The file {path_to_pb} doesn't exist")
+    try:
+        file_content = file_io.FileIO(path_to_pb, "rb").read()
+        saved_model.ParseFromString(file_content)
+    except message.DecodeError as e:
+        raise IOError("Cannot parse file %s: %s." % (path_to_pb, str(e)))
     set_of_tags = set([tag for tag in tag_set.split(",") if tag])
     for meta_graph_def in saved_model.meta_graphs:
         if set(meta_graph_def.meta_info_def.tags) == set_of_tags:
-            return meta_graph_def
-  
+            signature = meta_graph_def.signature_def[signature_def]
+            return signature
     raise RuntimeError("MetaGraphDef associated with tag-set %r could not be"
                        " found in SavedModel" % tag_set)
 
-def export_model_config(prm: ExportParameters):
+def export_model_config(prm: ExportParameters, frozen_inputs=None, frozen_outputs=None):
     """Export model configuration
 
     Export the model configuration in json format
@@ -89,8 +100,7 @@ def export_model_config(prm: ExportParameters):
     import  os
     import  sys
     import  json
-    from    tensorflow.core.protobuf import saved_model_pb2
-    from    tensorflow.python.lib.io import file_io
+    import  tensorflow as tf
     from    tensorflow.python.saved_model import constants
     from    tensorflow.python.util import compat
 
@@ -136,31 +146,22 @@ def export_model_config(prm: ExportParameters):
             cfg['image_height'] = image_resizer.max_dimension
         import google.protobuf.json_format as json_format
         model = json_format.MessageToDict(model_data)
+    signature = None
     # Saved_model
     saved_model_dir = os.path.join(prm.output_directory, 'saved_model')
-    path_to_pb = os.path.join(compat.as_bytes(saved_model_dir), compat.as_bytes(constants.SAVED_MODEL_FILENAME_PB))
-    if (os.path.isfile(path_to_pb)):
-        # Read the saved model
-        saved_model = saved_model_pb2.SavedModel()
-        if file_io.file_exists(path_to_pb):
-            try:
-                file_content = file_io.FileIO(path_to_pb, "rb").read()
-                saved_model.ParseFromString(file_content)
-            except message.DecodeError as e:
-                raise IOError("Cannot parse file %s: %s." % (path_to_pb, str(e)))
-        else:
-            raise IOError(f"The file {path_to_pb} doesn't exist")
-        # Obtain the metagraph
-        meta_graph_def = get_meta_graph_def(saved_model, 'serve')
-        cfg['inputs'] = {}
+    path_to_pb = os.path.join(saved_model_dir, constants.SAVED_MODEL_FILENAME_PB)
+    path_to_config = path_to_pb + '.config'
+    if (os.path.isfile(path_to_pb) and (not os.path.isfile(path_to_config) or os.path.getmtime(path_to_pb) > os.path.getmtime(path_to_config))):
         # Obtain the default signature
-        serving_default = meta_graph_def.signature_def['serving_default']
+        if (not signature):
+            signature = get_signature(path_to_pb)
+        cfg['inputs'] = {}
         # Add inputs information to the json output
-        for key, tensor in meta_graph_def.signature_def['serving_default'].inputs.items():
+        for key, tensor in signature.inputs.items():
             cfg['inputs'][key] = get_tf_tensor_info(tensor)
         # Add outputs information to the json output
         cfg['outputs'] = {}
-        for key, tensor in meta_graph_def.signature_def['serving_default'].outputs.items():
+        for key, tensor in signature.outputs.items():
             cfg['outputs'][key] = get_tf_tensor_info(tensor)
         # Add labels
         if (len(labels) > 0):
@@ -169,14 +170,51 @@ def export_model_config(prm: ExportParameters):
         if (model):
             cfg['model'] = model
         # Save information to the json output
-        with open(saved_model_dir + '.config', 'w') as outfile:
+        with open(path_to_config, 'w') as outfile:
+            json.dump(cfg, outfile, indent=2)
+    # Frozen graph
+    path_to_model = os.path.join(prm.output_directory, prm.frozen_graph)
+    path_to_config = path_to_model + '.config'
+    if (os.path.isfile(path_to_model) and (not os.path.isfile(path_to_config) or os.path.getmtime(path_to_model) > os.path.getmtime(path_to_config))):
+        # Obtain the default signature
+        if (not signature):
+            signature = get_signature(path_to_pb)
+        # Add inputs information to the json output
+        cfg['inputs'] = {}
+        ix = 0
+        for key, tensor in signature.inputs.items():
+            cfg['inputs'][key] = get_tf_tensor_info(tensor)
+            if (frozen_inputs):
+                cfg['inputs'][key]['name'] = frozen_inputs[ix].name
+            else:
+                cfg['inputs'][key]['name'] = 'input_tensor' + ('' if ix == 0 else ('_' + str(ix)))
+            ix = ix + 1
+        # Add outputs information to the json output
+        cfg['outputs'] = {}
+        ix = 0
+        for key, tensor in signature.outputs.items():
+            cfg['outputs'][key] = get_tf_tensor_info(tensor)
+            if (frozen_outputs):
+                cfg['outputs'][key]['name'] = frozen_outputs[ix].name
+            else:
+                cfg['outputs'][key]['name'] = 'Identity' + ('' if ix == 0 else ('_' + str(ix)))
+            ix = ix + 1
+        # Add labels
+        if (len(labels) > 0):
+            cfg['labels'] = labels
+        # Add model info
+        if (model):
+            cfg['model'] = model
+        # Save information to the json output
+        with open(path_to_config, 'w') as outfile:
             json.dump(cfg, outfile, indent=2)
     # ONNX
     import onnx
-    onnx_path = os.path.join(prm.output_directory, 'saved_model.onnx')
-    if (os.path.isfile(onnx_path)):
-        # Load the saved model
-        onnx_model = onnx.load(onnx_path)
+    path_to_model = os.path.join(prm.output_directory, prm.onnx)
+    path_to_config = path_to_model + '.config'
+    if (os.path.isfile(path_to_model) and (not os.path.isfile(path_to_config) or os.path.getmtime(path_to_model) > os.path.getmtime(path_to_config))):
+        # Load the onnx model
+        onnx_model = onnx.load(path_to_model)
         cfg['inputs'] = {}
         # Add inputs information to the json output
         for input in onnx_model.graph.input:
@@ -192,10 +230,18 @@ def export_model_config(prm: ExportParameters):
         if (model):
             cfg['model'] = model
         # Save information to the json output
-        with open(onnx_path + '.config', 'w') as outfile:
+        with open(path_to_config, 'w') as outfile:
             json.dump(cfg, outfile, indent=2)
 
 if __name__ == '__main__':
     prm = ExportParameters()
+
+    #@@@
+    #import os
+    #prm.output_directory = 'exported-model-ssd-320x320'
+    #prm.frozen_graph_path = os.path.join(prm.output_directory, 'frozen_graph.pb')
+    #prm.onnx_path = os.path.join(prm.output_directory, 'saved_model.onnx')
+    #@@@
+
     export_model_config(prm)
 

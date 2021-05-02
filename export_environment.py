@@ -16,14 +16,10 @@ def init_export_environment(prm: ExportParameters):
     """
     # Check if the export directory is specified
     if (not prm.output_directory):
-        print('Warning: export output directory is not specified so nothing will be exported')
+        print('Warning: export output directory is not specified so nothing will be exported as saved_model')
         return;
     # Set the configuration for Google Colab
-    if ('google.colab' in sys.modules and Cfg.data_on_drive):
-        if (not os.path.exists('/mnt/MyDrive')):
-            print('Mounting the GDrive')
-            from google.colab import drive
-            drive.mount('/mnt')
+    if (os.path.isdir('/content') and os.path.isdir('/mnt/MyDrive')):
         # Check the existence of the checkpoints directory
         gdrive_dir = os.path.join('/mnt', 'MyDrive', prm.trained_checkpoint_dir)
         if (not os.path.isdir(gdrive_dir)):
@@ -38,7 +34,7 @@ def init_export_environment(prm: ExportParameters):
         if (not os.path.isdir(gdrive_dir)):
             print('Creating the output directory')
             os.mkdir(gdrive_dir)
-        if (str(Path(prm.output_directory).resolve()) == str(Path(prm.model_dir).resolve())):
+        if (prm.model_dir and str(Path(prm.output_directory).resolve()) == str(Path(prm.model_dir).resolve())):
             raise Exception("Error: export directory cannot be the train directory")
         if (os.path.exists('/content/exported-model')):
             os.unlink('/content/exported-model')
@@ -46,18 +42,19 @@ def init_export_environment(prm: ExportParameters):
         print(f"Google drive's {prm.output_directory} is linked to /content/exported-model")
         prm.output_directory = '/content/exported-model'
     else:
-        if (not os.path.isdir(prm.trained_checkpoint_dir)):
+        if (prm.trained_checkpoint_dir and not os.path.isdir(prm.trained_checkpoint_dir)):
             raise Exception('Error!!! The trained checkpoint dir doesn`t exist')
         print(f'Trained checkpoint directory from {str(Path(prm.trained_checkpoint_dir).resolve())}')
         if (not os.path.exists(prm.output_directory)):
             print('Creating the output directory')
             os.mkdir(prm.output_directory)
-        if (str(Path(prm.output_directory).resolve()) == str(Path(prm.model_dir).resolve())):
+        if (prm.model_dir and str(Path(prm.output_directory).resolve()) == str(Path(prm.model_dir).resolve())):
             raise Exception("Error: export directory cannot be the train directory")
         print(f'The exported model will be in {str(Path(prm.output_directory).resolve())}')
     # Copy the label file in the export directory
     try:
-        shutil.copy2(os.path.join(prm.trained_checkpoint_dir, 'label_map.pbtxt'), prm.output_directory)
+        if (prm.trained_checkpoint_dir):
+            shutil.copy2(os.path.join(prm.trained_checkpoint_dir, 'label_map.pbtxt'), prm.output_directory)
     except:
         print(f"Warning: the file {os.path.join(prm.trained_checkpoint_dir, 'label_map.pbtxt')} doesn't exist and will not be copied to the output")
 

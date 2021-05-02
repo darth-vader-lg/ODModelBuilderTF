@@ -17,7 +17,7 @@ def export_onnx(prm: ExportParameters):
             sys.argv = [__file__, '--saved-model']
             sys.argv.append(os.path.join(prm.output_directory, 'saved_model'))
             sys.argv.append('--output')
-            sys.argv.append(os.path.join(prm.output_directory, 'saved_model.onnx'))
+            sys.argv.append(os.path.join(prm.output_directory, prm.onnx))
             sys.argv.append('--opset')
             sys.argv.append('12')
         convert.main()

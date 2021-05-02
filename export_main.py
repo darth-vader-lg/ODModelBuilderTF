@@ -8,9 +8,11 @@ except: pass
 # Avoiding the absl error for duplicated flags if run again the cell from a notebook
 allow_flags_override()
 
-flags.DEFINE_bool   ('export_onnx', False, 'Enable exporting of the ONNX model')
+flags.DEFINE_string   ('onnx', None, 'Name of the optional onnx file to generate')
+flags.DEFINE_string   ('frozen_graph', None, 'Name of the optional frozen graph file to generate')
 
 def export_main(unused_argv):
+    
     # Part of code not executed on Colab notebook
     def run_py_mode():
         # Init the train environment
@@ -19,27 +21,43 @@ def export_main(unused_argv):
         export_parameters = ExportParameters()
         export_parameters.update_values()
         # Check if the export directory is specified
-        if (not export_parameters.output_directory or len(export_parameters.output_directory) < 1):
+        if (not export_parameters.output_directory):
+            return;
+        # Check if at least an export operation is defined
+        if (not export_parameters.trained_checkpoint_dir and
+            not export_parameters.onnx and
+            not export_parameters.frozen_graph):
             return
         init_export_environment(export_parameters)
-        # Import the export main function
-        from object_detection import exporter_main_v2
-        export_parameters.update_flags()
-        # Export the model
-        exporter_main_v2.main(unused_argv)
-        # Export the ONNX if enabled
-        if (export_parameters.export_onnx):
+        # Export the saved_model if it's needed an update
+        if (export_parameters.trained_checkpoint_dir):
+            # Import the export main function
+            from object_detection import exporter_main_v2
+            export_parameters.update_flags()
+            exporter_main_v2.main(unused_argv)
+        # Export the frozen model if defined
+        frozen_inputs = frozen_outputs = None
+        if (export_parameters.frozen_graph):
+            from export_frozen_graph import export_frozen_graph
+            frozen_inputs, frozen_outputs = export_frozen_graph(export_parameters)
+        # Export the ONNX if defined
+        if (export_parameters.onnx):
             from export_onnx import export_onnx
             export_onnx(export_parameters)
+        # Export the configuration files
+        from export_model_config import export_model_config
+        export_model_config(export_parameters, frozen_inputs, frozen_outputs)
+
     def run_notebook_mode():
         # Check if the export directory is specified
-        if (not prm.output_directory or len(prm.output_directory) < 1):
+        if (not prm.output_directory):
             return
         # Import the export main function
         from object_detection import exporter_main_v2
         prm.update_flags()
         # Export the model
         exporter_main_v2.main(unused_argv)
+
     # Execution
     if (is_jupyter()):
         run_notebook_mode()

@@ -11,7 +11,9 @@ def main(unused_argv):
     # Clear the default configuration output dirs.
     # They must be specified in the command line parameters for enabling phases.
     if (is_executable()):
-        Cfg.exported_model = None
+        Cfg.exported_model_dir = None
+        Cfg.exported_onnx_path = None
+        Cfg.exported_frozen_graph_path = None
         Cfg.max_train_steps = 0
     try:
         if (not is_executable()):
@@ -51,7 +53,7 @@ if __name__ == '__main__':
             from export_main import export_main
             # Validate the hypothetical empty mandatory flags values and call the main
             from absl import flags
-            for flag in ['pipeline_config_path', 'trained_checkpoint_dir', 'output_directory']:
+            for flag in ['model_dir', 'pipeline_config_path', 'trained_checkpoint_dir', 'output_directory']:
                     flags.FLAGS[flag].validators.clear()
             tf.compat.v1.app.run(main)
         else:
