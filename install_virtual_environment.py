@@ -49,7 +49,8 @@ def install_virtual_environment(env_name: str = env_name):
     if (not get_package_info('object-detection').version):
         print('Installing the object detection API')
         try:
-            execute_script(['od_install.py'])
+            from od_install import install_object_detection
+            install_object_detection()
         except subprocess.CalledProcessError as exc:
             return exc.returncode
     return 0

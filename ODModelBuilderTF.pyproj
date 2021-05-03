@@ -21,6 +21,7 @@
     <CommandLineArguments>--output_directory exported-model-ssd-320x320 --frozen_graph frozen_graph.pb  --onnx saved_model.onnx --trained_checkpoint_dir=""</CommandLineArguments>
     <Environment>CUDA_VISIBLE_DEVICES=-1
 </Environment>
+    <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -91,6 +92,7 @@
   <ItemGroup>
     <Content Include="build_exe.bat" />
     <Content Include="install_virtual_environment.bat" />
+    <Content Include="ODModelBuilderTF.spec" />
     <Content Include="py_to_ODModelBuilderTF_ipynb.bat" />
     <Content Include="requirements.txt" />
     <Content Include="set_sync_jupyter_notebook_env.bat" />

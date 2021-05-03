@@ -28,16 +28,7 @@ def build_exe(name: str):
                 return result
             result = 1
             from utilities import execute
-            execute([
-                'pyinstaller',
-                '--onefile',
-                '--hidden-import', 'pandas._libs.tslibs.base',
-                '--hidden-import', 'tensorflow.python.keras.engine.base_layer_v1',
-                '--add-binary', f'{env_name}/Scripts/tensorboard.exe;.',
-                '--runtime-tmpdir', '%TEMP%/tf-od-model-builder',
-                '--distpath', exe_name,
-                '--name', exe_name,
-                'main.py'])
+            execute(['pyinstaller', '--distpath', exe_name, 'ODModelBuilderTF.spec'])
             # Remove the build directory
             import shutil
             shutil.rmtree('build')
