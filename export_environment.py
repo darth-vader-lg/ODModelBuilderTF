@@ -21,14 +21,18 @@ def init_export_environment(prm: ExportParameters):
     # Set the configuration for Google Colab
     if (os.path.isdir('/content') and os.path.isdir('/mnt/MyDrive')):
         # Check the existence of the checkpoints directory
-        gdrive_dir = os.path.join('/mnt', 'MyDrive', prm.trained_checkpoint_dir)
-        if (not os.path.isdir(gdrive_dir)):
-            raise Exception('Error!!! The trained checkpoint directory doesn`t exist')
-        if (os.path.exists('/content/trained-model')):
-            os.unlink('/content/trained-model')
-        os.symlink(gdrive_dir, '/content/trained-model', True)
-        print(f"Google drive's {prm.trained_checkpoint_dir} is linked to /content/trained-model")
-        prm.trained_checkpoint_dir = '/content/trained-model'
+        if (prm.trained_checkpoint_dir):
+            if (not os.path.isdir(prm.trained_checkpoint_dir)):
+                raise Exception('Error!!! The trained checkpoint dir doesn`t exist')
+            else:
+                gdrive_dir = os.path.join('/mnt', 'MyDrive', prm.trained_checkpoint_dir)
+                if (not os.path.isdir(gdrive_dir)):
+                    raise Exception('Error!!! The trained checkpoint directory doesn`t exist')
+                if (os.path.exists('/content/trained-model')):
+                    os.unlink('/content/trained-model')
+                os.symlink(gdrive_dir, '/content/trained-model', True)
+                print(f"Google drive's {prm.trained_checkpoint_dir} is linked to /content/trained-model")
+                prm.trained_checkpoint_dir = '/content/trained-model'
         # Check the existence of the output directory
         gdrive_dir = os.path.join('/mnt', 'MyDrive', prm.output_directory)
         if (not os.path.isdir(gdrive_dir)):
