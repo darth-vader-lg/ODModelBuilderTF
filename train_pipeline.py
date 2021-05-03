@@ -20,13 +20,15 @@ def config_train_pipeline(prm: TrainParameters):
     # Copy the pipeline configuration file if it's not already present in the output dir
     print('Configuring the pipeline')
     output_file = prm.pipeline_config_path
-    pre_trained_model_dir = os.path.join(prm.pre_trained_model_base_dir, prm.model['dir_name'])
-    pre_trained_cfg_file = os.path.join(
-        tempfile.gettempdir(),
-        'tf-od-api-' + Cfg.od_api_git_sha1,
-        'research', 'object_detection', 'configs', 'tf2',
-        prm.model['dir_name'] + '.config')
-    shutil.copy2(pre_trained_cfg_file, output_file)
+    if (not output_file):
+        output_file = prm.pipeline_config_path = os.path.join(prm.annotations_dir, 'pipeline.config')
+        pre_trained_model_dir = os.path.join(prm.pre_trained_model_base_dir, prm.model['dir_name'])
+        pre_trained_cfg_file = os.path.join(
+            tempfile.gettempdir(),
+            'tf-od-api-' + Cfg.od_api_git_sha1,
+            'research', 'object_detection', 'configs', 'tf2',
+            prm.model['dir_name'] + '.config')
+        shutil.copy2(pre_trained_cfg_file, output_file)
     # Read the number of labels
     label_dict = label_map_util.get_label_map_dict(os.path.join(prm.annotations_dir, 'label_map.pbtxt'))
     labels_count = len(label_dict)
