@@ -10,20 +10,6 @@ except: pass
 try:    from    utilities import *
 except: pass
 
-# Progress class for the git output
-class GitCallbacks(pygit2.RemoteCallbacks):
-    def __init__(self, credentials=None, certificate=None):
-        self.dateTime = datetime.datetime.now()
-        return super().__init__(credentials=credentials, certificate=certificate)
-    def transfer_progress(self, stats):
-        now = datetime.datetime.now()
-        if ((now - self.dateTime).total_seconds() > 1):
-            print('\rReceiving... Deltas [%d / %d], Objects [%d / %d]'%(stats.indexed_deltas, stats.total_deltas, stats.indexed_objects, stats.total_objects), end='', flush=True)
-            self.dateTime = now
-        if (stats.received_objects >= stats.total_objects and stats.indexed_objects >= stats.total_objects and stats.indexed_deltas >= stats.total_deltas):
-            print('\r\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\rDone Deltas %d, Objects %d.'%(stats.total_objects, stats.total_objects))
-        return super().transfer_progress(stats)
-
 def install_object_detection():
     """
     Install a well known environment.
@@ -56,6 +42,19 @@ def install_object_detection():
     else:
         print('pygit2 1.5.0 is already installed')
     import pygit2
+    # Progress class for the git output
+    class GitCallbacks(pygit2.RemoteCallbacks):
+        def __init__(self, credentials=None, certificate=None):
+            self.dateTime = datetime.datetime.now()
+            return super().__init__(credentials=credentials, certificate=certificate)
+        def transfer_progress(self, stats):
+            now = datetime.datetime.now()
+            if ((now - self.dateTime).total_seconds() > 1):
+                print('\rReceiving... Deltas [%d / %d], Objects [%d / %d]'%(stats.indexed_deltas, stats.total_deltas, stats.indexed_objects, stats.total_objects), end='', flush=True)
+                self.dateTime = now
+            if (stats.received_objects >= stats.total_objects and stats.indexed_objects >= stats.total_objects and stats.indexed_deltas >= stats.total_deltas):
+                print('\r\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\rDone Deltas %d, Objects %d.'%(stats.total_objects, stats.total_objects))
+            return super().transfer_progress(stats)
     # Directory of the TensorFlow object detection api and commit id
     od_api_dir = os.path.join(tempfile.gettempdir(), 'tf-od-api-' + Cfg.od_api_git_sha1)
     # Install the object detection api
