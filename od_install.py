@@ -80,7 +80,9 @@ def install_object_detection():
         # Checkout the well known commit
         print(f'Checkout of the object detection api repository at the commit {Cfg.od_api_git_sha1}')
         (commit, reference) = repo.resolve_refish(Cfg.od_api_git_sha1)
-        repo.checkout_tree(commit)
+        try:
+            repo.checkout_tree(commit)
+        except: pass
         repo.reset(pygit2.Oid(hex=Cfg.od_api_git_sha1), pygit2.GIT_RESET_HARD)
         # Move to the research dir
         currentDir = os.getcwd()
@@ -140,7 +142,9 @@ def install_object_detection():
         # Checkout the well known commit
         print(f'Checkout of the onnx converter repository at the commit {tf2onnx_git_sha1}')
         (commit, reference) = repo.resolve_refish(tf2onnx_git_sha1)
-        repo.checkout_tree(commit)
+        try:
+            repo.checkout_tree(commit)
+        except: pass
         repo.reset(pygit2.Oid(hex=tf2onnx_git_sha1), pygit2.GIT_RESET_HARD)
         # Move to the onnx converter dir
         currentDir = os.getcwd()
