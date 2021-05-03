@@ -2,31 +2,35 @@ import  os
 from    export_parameters import ExportParameters
 
 def export_frozen_graph(prm: ExportParameters):
-    # Tensorflow 2.x
+    # Imports
     import tensorflow as tf
-    from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
-
-    #Import the model
-    saved_model = tf.saved_model.load(os.path.join(prm.output_directory, 'saved_model'))
-    model = saved_model.signatures['serving_default']
-    # Convert Keras model to ConcreteFunction
-    full_model = tf.function(lambda input_tensor: model(input_tensor))
-    full_model = full_model.get_concrete_function(
-        tf.TensorSpec(model.inputs[0].shape, model.inputs[0].dtype))
- 
-    # Get frozen ConcreteFunction
-    frozen_func = convert_variables_to_constants_v2(full_model)
-    graph_def = frozen_func.graph.as_graph_def()
- 
-    # Print out model inputs and outputs
-    print("Frozen model inputs: ", frozen_func.inputs)
-    print("Frozen model outputs: ", frozen_func.outputs)
- 
+    from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2_as_graph
+    # Load the model
+    imported = tf.saved_model.load(os.path.join(prm.output_directory, 'saved_model'))
+    # Read the signature
+    f = imported.signatures['serving_default']
+    frozen_func, graph_def = convert_variables_to_constants_v2_as_graph(f, lower_control_flow=False)
+    # Extract the input output tensors
+    input_tensors = [tensor for tensor in frozen_func.inputs if tensor.dtype != tf.resource]
+    output_tensors = frozen_func.outputs
+    input_tensor_names = [tensor.name for tensor in input_tensors]
+    output_tensor_names = [tensor.name for tensor in output_tensors]
+    print('input_tensor_names:', input_tensor_names)
+    print('output_tensor_names:', output_tensor_names)
+    # Run optimization for inference
+    from tensorflow.lite.python.util import run_graph_optimizations, get_grappler_config
+    graph_def = run_graph_optimizations(
+       graph_def,
+       input_tensors,
+       output_tensors,
+       config=get_grappler_config(["constfold", "function"]),
+       graph=frozen_func.graph)
     # Save frozen graph to disk
-    tf.io.write_graph(graph_or_graph_def=frozen_func.graph,
+    tf.io.write_graph(graph_or_graph_def=graph_def,
                       logdir=prm.output_directory,
                       name=prm.frozen_graph,
                       as_text=False)
+    # Return the lists of input outputs
     return frozen_func.inputs, frozen_func.outputs
 
 if __name__ == '__main__':
