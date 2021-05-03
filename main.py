@@ -36,28 +36,25 @@ def main(unused_argv):
         pass
 
 if __name__ == '__main__':
-    if (not is_jupyter() and not is_executable()):
+    if (not is_executable()):
         from install_virtual_environment import install_virtual_environment
         install_virtual_environment()
     try:
         import tensorflow as tf
-        # import the module here just for having the flags defined
-        if (not is_jupyter()):
-            allow_flags_override()
-            from object_detection import model_main_tf2
-            allow_flags_override()
-            from object_detection import exporter_main_v2
-            allow_flags_override()
-            from train_main import train_main
-            allow_flags_override()
-            from export_main import export_main
-            # Validate the hypothetical empty mandatory flags values and call the main
-            from absl import flags
-            for flag in ['model_dir', 'pipeline_config_path', 'trained_checkpoint_dir', 'output_directory']:
-                    flags.FLAGS[flag].validators.clear()
-            tf.compat.v1.app.run(main)
-        else:
-            tf.compat.v1.app.run(main)
+        # import the modules here just for having the flags defined
+        allow_flags_override()
+        from object_detection import model_main_tf2
+        allow_flags_override()
+        from object_detection import exporter_main_v2
+        allow_flags_override()
+        from train_main import train_main
+        allow_flags_override()
+        from export_main import export_main
+        # Validate the hypothetical empty mandatory flags values and call the main
+        from absl import flags
+        for flag in ['model_dir', 'pipeline_config_path', 'trained_checkpoint_dir', 'output_directory']:
+                flags.FLAGS[flag].validators.clear()
+        tf.compat.v1.app.run(main)
     except KeyboardInterrupt:
         if (not is_executable()):
             print('Interrupted by user')
