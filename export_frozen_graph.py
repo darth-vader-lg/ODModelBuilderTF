@@ -1,132 +1,83 @@
 import  os
 from    export_parameters import ExportParameters
-from    tensorflow.python.framework.convert_to_constants import _FunctionConverterData, _GraphDef, _replace_variables_by_constants
-from    tensorflow.python.util import lazy_loader, object_identity
-
-wrap_function = lazy_loader.LazyLoader(
-    "wrap_function", globals(),
-    "tensorflow.python.eager.wrap_function")
 
 def _construct_concrete_function(func, output_graph_def,
                                  converted_input_indices):
-  """Constructs a concrete function from the `output_graph_def`.
+    """Constructs a concrete function from the `output_graph_def`.
 
-  Args:
-    func: ConcreteFunction
-    output_graph_def: GraphDef proto.
-    converted_input_indices: Set of integers of input indices that were
-      converted to constants.
+    Args:
+        func: ConcreteFunction
+        output_graph_def: GraphDef proto.
+        converted_input_indices: Set of integers of input indices that were
+        converted to constants.
 
-  Returns:
-    ConcreteFunction.
-  """
-  # Create a ConcreteFunction from the new GraphDef.
-  input_tensors = func.graph.internal_captures
-  converted_inputs = object_identity.ObjectIdentitySet(
-      [input_tensors[index] for index in converted_input_indices])
-  not_converted_inputs = [
-      tensor for tensor in func.inputs if tensor not in converted_inputs
-  ]
-  not_converted_inputs_map = {
-      tensor.name: tensor for tensor in not_converted_inputs
-  }
+    Returns:
+        ConcreteFunction.
+    """
+    from    tensorflow.python.util import lazy_loader, object_identity
+    wrap_function = lazy_loader.LazyLoader("wrap_function", globals(), "tensorflow.python.eager.wrap_function")
+    # Create a ConcreteFunction from the new GraphDef.
+    input_tensors = func.graph.internal_captures
+    converted_inputs = object_identity.ObjectIdentitySet([input_tensors[index] for index in converted_input_indices])
+    not_converted_inputs = [tensor for tensor in func.inputs if tensor not in converted_inputs]
+    not_converted_inputs_map = { tensor.name: tensor for tensor in not_converted_inputs }
+    new_input_names = [tensor.name for tensor in not_converted_inputs]
+    new_output_names = [name + ':0' for name in sorted(func.output_shapes)]
+    new_func = wrap_function.function_from_graph_def(output_graph_def, new_input_names, new_output_names)
+    # Manually propagate shape for input tensors where the shape is not correctly
+    # propagated. Scalars shapes are lost when wrapping the function.
+    for input_tensor in new_func.inputs:
+        input_tensor.set_shape(not_converted_inputs_map[input_tensor.name].shape)
+    return new_func
 
-  new_input_names = [tensor.name for tensor in not_converted_inputs]
-  new_output_names = [name + ':0' for name in sorted(func.output_shapes)]
-  #new_output_names = [tensor.name for tensor in func.outputs] # Official
-  #new_output_names = [tensor.name.replace('Identity', 'MyIdentity') for tensor in func.outputs]
-  new_func = wrap_function.function_from_graph_def(output_graph_def,
-                                                   new_input_names,
-                                                   new_output_names)
+def _convert_to_frozen_graph(func, lower_control_flow=True, aggressive_inlining=False):
+    """Replaces all the variables in a graph with constants of the same values.
 
-  # Manually propagate shape for input tensors where the shape is not correctly
-  # propagated. Scalars shapes are lost when wrapping the function.
-  for input_tensor in new_func.inputs:
-    input_tensor.set_shape(not_converted_inputs_map[input_tensor.name].shape)
-  return new_func
+    This function works as same as convert_variables_to_constants_v2, but it
+    returns the intermediate `GraphDef` as well. This `GraphDef` contains all the
+    debug information after all the transformations in the frozen phase.
 
-def my_convert_variables_to_constants_v2_as_graph(func,
-                                               lower_control_flow=True,
-                                               aggressive_inlining=False):
-  """Replaces all the variables in a graph with constants of the same values.
+    Args:
+        func: ConcreteFunction.
+        lower_control_flow: Boolean indicating whether or not to lower control flow
+            ops such as If and While. (default True)
+        aggressive_inlining: Boolean indicating whether or not to to aggressive
+            function inlining (might be unsafe if function has stateful ops, not
+            properly connected to control outputs).
 
-  This function works as same as convert_variables_to_constants_v2, but it
-  returns the intermediate `GraphDef` as well. This `GraphDef` contains all the
-  debug information after all the transformations in the frozen phase.
-
-  Args:
-    func: ConcreteFunction.
-    lower_control_flow: Boolean indicating whether or not to lower control flow
-      ops such as If and While. (default True)
-    aggressive_inlining: Boolean indicating whether or not to to aggressive
-      function inlining (might be unsafe if function has stateful ops, not
-      properly connected to control outputs).
-
-  Returns:
-    ConcreteFunction containing a simplified version of the original, and also
-    the intermediate GraphDef containing the node debug information for the
-    transformations in the frozen phase.
-  """
-  converter_data = _FunctionConverterData(
-      func=func,
-      lower_control_flow=lower_control_flow,
-      aggressive_inlining=aggressive_inlining)
-
-  output_graph_def, converted_input_indices = _replace_variables_by_constants(
-      converter_data=converter_data)
-
-  import tensorflow as tf
-  with (tf.Graph().as_default()) as g:
-      tf.graph_util.import_graph_def(output_graph_def, name='')
-      graph_outputs = sorted([o.name for o in output_graph_def.node if o.name.startswith('Identity')])
-      mnemonic_outputs = sorted(func.output_shapes)
-      for graph_name, mnemonic_name in zip(graph_outputs, mnemonic_outputs):
-          t = g.get_tensor_by_name(graph_name + ':0')
-          tf.identity(t, mnemonic_name)
-      output_graph_def = g.as_graph_def() 
-
-  frozen_func = _construct_concrete_function(func, output_graph_def,
-                                             converted_input_indices)
-  return frozen_func, output_graph_def
-
-
-def _replace_variables_by_constants(converter_data):
-  """Replaces variables by constants on a given graph.
-
-  Given a _ConverterData instance with converted variables in its tensor_data
-  field, create a new graph where the respective variables are replaced with the
-  converted constants.
-
-  Args:
-    converter_data: A pre-populated _ConverterData instance.
-
-  Returns:
-    The converted graph.
-  """
-  input_graph = _GraphDef(converter_data.graph_def)
-
-  for tensor_name, tensor_data in converter_data.tensor_data.items():
-    input_graph.nodes[tensor_name].convert_variable_to_constant(None, tensor_data)
-
-  converted_graph = input_graph.converted_self().graph_def
-
-  converted_input_indices = {
-      t.index
-      for t in converter_data.tensor_data.values()
-      if t.index is not None
-  }
-
-  return converted_graph, converted_input_indices
+    Returns:
+        ConcreteFunction containing a simplified version of the original, and also
+        the intermediate GraphDef containing the node debug information for the
+        transformations in the frozen phase.
+    """
+    from    tensorflow.python.framework.convert_to_constants import _FunctionConverterData, _replace_variables_by_constants
+    converter_data = _FunctionConverterData(func=func, lower_control_flow=lower_control_flow, aggressive_inlining=aggressive_inlining)
+    output_graph_def, converted_input_indices = _replace_variables_by_constants(converter_data=converter_data)
+    import tensorflow as tf
+    with (tf.Graph().as_default()) as g:
+        tf.graph_util.import_graph_def(output_graph_def, name='')
+        graph_outputs = sorted([o.name for o in output_graph_def.node if o.name.startswith('Identity')])
+        mnemonic_outputs = sorted(func.output_shapes)
+        for graph_name, mnemonic_name in zip(graph_outputs, mnemonic_outputs):
+            t = g.get_tensor_by_name(graph_name + ':0')
+            tf.identity(t, mnemonic_name)
+        output_graph_def = g.as_graph_def() 
+    frozen_func = _construct_concrete_function(func, output_graph_def, converted_input_indices)
+    return frozen_func, output_graph_def
 
 def export_frozen_graph(prm: ExportParameters):
+    """Export a frozen graph
+
+    Args:
+        prm: Parameters.
+    """
     # Imports
     import tensorflow as tf
-    from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2_as_graph
     # Load the model
     imported = tf.saved_model.load(os.path.join(prm.output_directory, 'saved_model'))
     # Read the signature
     f = imported.signatures['serving_default']
-    frozen_func, graph_def = my_convert_variables_to_constants_v2_as_graph(f, lower_control_flow=False)
+    frozen_func, graph_def = _convert_to_frozen_graph(f, lower_control_flow=False)
     # Extract the input output tensors
     input_tensors = [tensor for tensor in frozen_func.inputs if tensor.dtype != tf.resource]
     output_tensors = frozen_func.outputs
@@ -142,8 +93,6 @@ def export_frozen_graph(prm: ExportParameters):
        output_tensors,
        config=get_grappler_config(["constfold", "function"]),
        graph=frozen_func.graph)
-    
-
     # Save frozen graph to disk
     tf.io.write_graph(graph_or_graph_def=graph_def,
                       logdir=prm.output_directory,
@@ -154,12 +103,5 @@ def export_frozen_graph(prm: ExportParameters):
 
 if __name__ == '__main__':
     prm = ExportParameters()
-
-    #import os
-    prm.output_directory = 'exported-model-ssd-320x320'
-    prm.frozen_graph = 'frozen_graph.pb'
-    #from tensorflow.python.tools.import_pb_to_tensorboard import import_to_tensorboard
-    #import_to_tensorboard(prm.model_dir, os.path.join(prm.output_directory, 'logs'), 'serve')
-
     export_frozen_graph(prm)
 

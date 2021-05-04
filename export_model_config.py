@@ -253,13 +253,5 @@ def export_model_config(prm: ExportParameters, frozen_inputs=None, frozen_output
 
 if __name__ == '__main__':
     prm = ExportParameters()
-
-    #@@@
-    #import os
-    #prm.output_directory = 'exported-model-ssd-320x320'
-    #prm.frozen_graph_path = os.path.join(prm.output_directory, 'frozen_graph.pb')
-    #prm.onnx_path = os.path.join(prm.output_directory, 'saved_model.onnx')
-    #@@@
-
     export_model_config(prm)
 
