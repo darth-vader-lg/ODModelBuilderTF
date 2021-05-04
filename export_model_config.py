@@ -17,6 +17,7 @@ def get_tf_tensor_info(tensor):
         shape = [dim.size for dim in tensor.tensor_shape.dim]
     result = {
         'name': tensor.name,
+        'type': tensor.dtype,
         'shape': shape,
         }
     return result
@@ -46,6 +47,7 @@ def get_onnx_tensor_info(tensor):
                 shape.append(-1)  # unknown dimension with no name
     result = {
         'name': tensor.name,
+        'type': tensor_type.elem_type,
         'shape': shape,
         }
     return result
@@ -127,6 +129,9 @@ def export_model_config(prm: ExportParameters, frozen_inputs=None, frozen_output
             labels.append(label)
     # Model info
     model = None
+    # File info
+    cfg['format_type'] = ''
+    cfg['graph_type'] = ''
     pipeline_config_file = os.path.join(prm.output_directory, 'pipeline.config')
     if os.path.isfile(pipeline_config_file):
         from object_detection.protos.pipeline_pb2 import TrainEvalPipelineConfig
@@ -152,17 +157,22 @@ def export_model_config(prm: ExportParameters, frozen_inputs=None, frozen_output
     path_to_pb = os.path.join(saved_model_dir, constants.SAVED_MODEL_FILENAME_PB)
     path_to_config = path_to_pb + '.config'
     if (os.path.isfile(path_to_pb) and (not os.path.isfile(path_to_config) or os.path.getmtime(path_to_pb) > os.path.getmtime(path_to_config))):
+        # File info
+        cfg['format_type'] = 'TensorFlow-' + tf.version.VERSION
+        cfg['graph_type'] = 'saved_model'
         # Obtain the default signature
         if (not signature):
             signature = get_signature(path_to_pb)
         cfg['inputs'] = {}
         # Add inputs information to the json output
-        for key, tensor in signature.inputs.items():
-            cfg['inputs'][key] = get_tf_tensor_info(tensor)
+        inputs = dict(sorted(signature.inputs.items(), key=lambda item: item[1].name))
+        for key in inputs:
+            cfg['inputs'][key] = get_tf_tensor_info(inputs[key])
         # Add outputs information to the json output
         cfg['outputs'] = {}
-        for key, tensor in signature.outputs.items():
-            cfg['outputs'][key] = get_tf_tensor_info(tensor)
+        outputs = dict(sorted(signature.outputs.items(), key=lambda item: item[1].name))
+        for key in outputs:
+            cfg['outputs'][key] = get_tf_tensor_info(outputs[key])
         # Add labels
         if (len(labels) > 0):
             cfg['labels'] = labels
@@ -176,14 +186,19 @@ def export_model_config(prm: ExportParameters, frozen_inputs=None, frozen_output
     path_to_model = os.path.join(prm.output_directory, prm.frozen_graph)
     path_to_config = path_to_model + '.config'
     if (os.path.isfile(path_to_model) and (not os.path.isfile(path_to_config) or os.path.getmtime(path_to_model) > os.path.getmtime(path_to_config))):
+        # File info
+        cfg['format_type'] = 'TensorFlow-' + tf.version.VERSION
+        cfg['graph_type'] = 'frozen_graph'
         # Obtain the default signature
         if (not signature):
             signature = get_signature(path_to_pb)
         # Add inputs information to the json output
         cfg['inputs'] = {}
         ix = 0
-        for key, tensor in signature.inputs.items():
-            cfg['inputs'][key] = get_tf_tensor_info(tensor)
+        inputs = dict(sorted(signature.inputs.items(), key=lambda item: item[1].name))
+        import tensorflow._api.v2.dtypes
+        for key in inputs:
+            cfg['inputs'][key] = get_tf_tensor_info(inputs[key])
             if (frozen_inputs):
                 cfg['inputs'][key]['name'] = frozen_inputs[ix].name
             else:
@@ -192,8 +207,9 @@ def export_model_config(prm: ExportParameters, frozen_inputs=None, frozen_output
         # Add outputs information to the json output
         cfg['outputs'] = {}
         ix = 0
-        for key, tensor in signature.outputs.items():
-            cfg['outputs'][key] = get_tf_tensor_info(tensor)
+        outputs = dict(sorted(signature.outputs.items(), key=lambda item: item[1].name))
+        for key in outputs:
+            cfg['outputs'][key] = get_tf_tensor_info(outputs[key])
             if (frozen_outputs):
                 cfg['outputs'][key]['name'] = frozen_outputs[ix].name
             else:
@@ -213,6 +229,8 @@ def export_model_config(prm: ExportParameters, frozen_inputs=None, frozen_output
     path_to_model = os.path.join(prm.output_directory, prm.onnx)
     path_to_config = path_to_model + '.config'
     if (os.path.isfile(path_to_model) and (not os.path.isfile(path_to_config) or os.path.getmtime(path_to_model) > os.path.getmtime(path_to_config))):
+        cfg['format_type'] = 'ONNX-' + onnx.version.version
+        cfg['graph_type'] = 'frozen_graph'
         # Load the onnx model
         onnx_model = onnx.load(path_to_model)
         cfg['inputs'] = {}
