@@ -53,7 +53,7 @@ if __name__ == '__main__':
         # Validate the hypothetical empty mandatory flags values and call the main
         from absl import flags
         for flag in ['model_dir', 'pipeline_config_path', 'trained_checkpoint_dir', 'output_directory']:
-                flags.FLAGS[flag].validators.clear()
+            flags.FLAGS[flag].validators.clear()
         tf.compat.v1.app.run(main)
     except KeyboardInterrupt:
         if (not is_executable()):
