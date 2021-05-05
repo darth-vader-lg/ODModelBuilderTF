@@ -46,9 +46,10 @@ def init_export_environment(prm: ExportParameters):
         print(f"Google drive's {prm.output_directory} is linked to /content/exported-model")
         prm.output_directory = '/content/exported-model'
     else:
-        if (prm.trained_checkpoint_dir and not os.path.isdir(prm.trained_checkpoint_dir)):
-            raise Exception('Error!!! The trained checkpoint dir doesn`t exist')
-        print(f'Trained checkpoint directory from {str(Path(prm.trained_checkpoint_dir).resolve())}')
+        if (prm.trained_checkpoint_dir):
+            if (not os.path.isdir(prm.trained_checkpoint_dir)):
+                raise Exception('Error!!! The trained checkpoint dir doesn`t exist')
+            print(f'Trained checkpoint directory from {str(Path(prm.trained_checkpoint_dir).resolve())}')
         if (not os.path.exists(prm.output_directory)):
             print('Creating the output directory')
             os.mkdir(prm.output_directory)
