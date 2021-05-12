@@ -20,6 +20,9 @@ def export_onnx(prm: ExportParameters):
             sys.argv.append(os.path.join(prm.output_directory, prm.onnx))
             sys.argv.append('--opset')
             sys.argv.append('12')
+            # TODO: read the correct shape of the tensors and define in the ONNX.
+            # sys.argv.append('--inputs')
+            # sys.argv.append('input_tensor:0[1,-1,-1,3]')
         convert.main()
     finally:
         sys.argv = argv_save
