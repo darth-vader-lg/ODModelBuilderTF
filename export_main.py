@@ -30,6 +30,9 @@ def export_main(unused_argv):
     if (export_parameters.trained_checkpoint_dir):
         # Import the export main function
         from object_detection import exporter_main_v2
+        pipeline_config_path = export_parameters.pipeline_config_path
+        if (not pipeline_config_path):
+            pipeline_config_path = export_parameters.pipeline_config_path = os.path.join(export_parameters.trained_checkpoint_dir, 'pipeline.config')
         export_parameters.update_flags()
         exporter_main_v2.main(unused_argv)
     # Export the frozen model if defined
