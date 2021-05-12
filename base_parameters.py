@@ -29,7 +29,7 @@ class BaseParameters:
     @property
     def model(self):
         global models
-        return models[self.model_type]
+        return self.model_type and models[self.model_type]
     @property
     def model_type(self): return self._model_type
     @model_type.setter
