@@ -77,6 +77,10 @@ def get_type_of_script():
     """
     try:
         ipy_str = str(type(get_ipython()))
+        try:
+            import google.colab
+            return 'colab'
+        except: pass
         if ('ipykernel_launcher.py' in sys.argv[0]):
             return 'jupyter'
         return 'ipython'
@@ -91,6 +95,12 @@ def install(package: str):
     Launch the installer process
     """
     execute_script(['-m', 'pip', 'install', '--upgrade', package])
+
+def is_colab():
+    """
+    True if running as an executable
+    """
+    return get_type_of_script() == 'colab'
 
 def is_executable():
     """
