@@ -65,7 +65,7 @@ def install_virtual_environment(env_name: str = env_name):
     if (force_install_requirements or (os.path.isfile('requirements.txt') and check_requirements('requirements.txt') > 0)):
         print('Installing the requirements')
         try:
-            execute_script(['-m', 'pip', 'install', '--no-cache-dir', '--upgrade', '-r', 'requirements.txt'])
+            execute_script(['-m', 'pip', 'install', '--upgrade', '-r', 'requirements.txt'])
         except subprocess.CalledProcessError as exc:
             return exc.returncode
     # Install the object detection environment
