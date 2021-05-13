@@ -39,7 +39,7 @@ def install_virtual_environment(env_name: str = env_name):
     script_dir = 'Scripts' if ('win32' in sys.platform) else 'bin'
     force_install_requirements = False
     from utilities import is_colab
-    if (not is_colab):
+    if (not is_colab()):
         if (not os.path.isdir(env_name)):
             print('Creating the Python virtual environment')
             try:
