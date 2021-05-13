@@ -76,6 +76,8 @@ def install_virtual_environment(env_name: str = env_name):
             install_object_detection()
         except subprocess.CalledProcessError as exc:
             return exc.returncode
+    # Force uninstall of the not compatible with Python >= 3.7 dataclasses package
+    execute_script(['-m', 'pip', 'uninstall', '-y', 'dataclasses'])
     return 0
 
 if __name__ == '__main__':
