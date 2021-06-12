@@ -343,11 +343,10 @@ healthchecksdb
 env/
 
 # Workspace directories
-images/
-annotations/
-trained-model/
-exported-model/
-build/
-ODModelBuilderTF/
+/images*/
+/annotations*/
+/trained-model*/
+/exported-model*/
+/build/
+/ODModelBuilderTF/
 ODModelBuilderTF.spec
-/exported-model-ssd-320x320

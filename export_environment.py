@@ -25,9 +25,8 @@ def init_export_environment(prm: ExportParameters):
             gdrive_dir = os.path.join('/mnt', 'MyDrive', prm.trained_checkpoint_dir)
             if (not os.path.isdir(gdrive_dir)):
                 raise Exception('Error!!! The trained checkpoint directory doesn`t exist')
-            if (os.path.exists('/content/trained-model')):
-                os.unlink('/content/trained-model')
-            os.symlink(gdrive_dir, '/content/trained-model', True)
+            if (not os.path.exists('/content/trained-model')):
+                os.symlink(gdrive_dir, '/content/trained-model', True)
             print(f"Google drive's {prm.trained_checkpoint_dir} is linked to /content/trained-model")
             prm.trained_checkpoint_dir = '/content/trained-model'
         # Check the existence of the output directory
@@ -37,9 +36,8 @@ def init_export_environment(prm: ExportParameters):
             os.mkdir(gdrive_dir)
         if (prm.model_dir and str(Path(prm.output_directory).resolve()) == str(Path(prm.model_dir).resolve())):
             raise Exception("Error: export directory cannot be the train directory")
-        if (os.path.exists('/content/exported-model')):
-            os.unlink('/content/exported-model')
-        os.symlink(gdrive_dir, '/content/exported-model', True)
+        if (not os.path.exists('/content/exported-model')):
+            os.symlink(gdrive_dir, '/content/exported-model', True)
         print(f"Google drive's {prm.output_directory} is linked to /content/exported-model")
         prm.output_directory = '/content/exported-model'
     else:

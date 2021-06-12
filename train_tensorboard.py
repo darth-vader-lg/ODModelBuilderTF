@@ -7,7 +7,7 @@ try:    from utilities import *
 except: pass
 
 def start_tensorboard(prm: BaseParameters):
-    log_dir = os.path.join(prm.model_dir, 'train')
+    log_dir = prm.model_dir
     error = True
     paths = [
         'tensorboard',

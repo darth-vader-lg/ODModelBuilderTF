@@ -14,16 +14,6 @@ def install_object_detection():
     """
     Install a well known environment.
     """
-    # Upgrade pip
-    if (get_package_info('pip').version != '21.0.1'):
-        install('pip==21.0.1')
-    else:
-        print('pip 21.0.1 is already installed')
-    # Upgrade setuptools
-    if (get_package_info('setuptools').version != '54.1.2'):
-        install('setuptools==54.1.2')
-    else:
-        print('setuptools 54.1.2 is already installed')
     # Install TensorFlow
     is_installed = False
     try:
@@ -37,10 +27,10 @@ def install_object_detection():
     else:
         print(f'TensorFlow {Cfg.tensorflow_version} is already installed')
     # Install pygit2
-    if (get_package_info('pygit2').version != '1.5.0'):
+    if (not get_package_info('pygit2').name):
         install('pygit2==1.5.0')
     else:
-        print('pygit2 1.5.0 is already installed')
+        print('pygit2 is already installed')
     import pygit2
     # Progress class for the git output
     class GitCallbacks(pygit2.RemoteCallbacks):
@@ -88,7 +78,10 @@ def install_object_detection():
         currentDir = os.getcwd()
         os.chdir(os.path.join(od_api_dir, 'research'))
         # Install the protobuf tools
-        install('grpcio-tools==1.32.0')
+        if (not get_package_info('grpcio-tools').name):
+            install('grpcio-tools>=1.32.0')
+        else:
+            print('grpcio-tools is already installed')
         # Compile the protobufs
         print(f'Compiling the protobufs')
         import grpc_tools.protoc as protoc
@@ -102,7 +95,11 @@ def install_object_detection():
         shutil.copy2('object_detection/packages/tf2/setup.py', '.')
         install('.')
         # Uninstall this package installed by someother one because incompatible with python >=3.7
-        execute_script(['-m', 'pip', 'uninstall', '-y', 'dataclasses'])
+        try:
+            import pkg_resources as pkg
+            pkg.require('dataclasses')
+            execute_script(['-m', 'pip', 'uninstall', '-y', 'dataclasses'])
+        except Exception as e: pass
         # Return to the original directory
         os.chdir(currentDir)
     else:
@@ -150,7 +147,7 @@ def install_object_detection():
         currentDir = os.getcwd()
         os.chdir(tf2onnx_dir)
         # Install the converter
-        install('.')
+        install('.')  # TODO: Install the package from GitHub and try with release 1.9.0
         # Return to the original directory
         os.chdir(currentDir)
     else:

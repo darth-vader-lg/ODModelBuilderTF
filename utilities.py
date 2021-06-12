@@ -76,7 +76,6 @@ def get_type_of_script():
     Return of the type of the script is being executed
     """
     try:
-        ipy_str = str(type(get_ipython()))
         try:
             import google.colab
             return 'colab'
@@ -94,7 +93,7 @@ def install(package: str):
     """
     Launch the installer process
     """
-    execute_script(['-m', 'pip', 'install', '--upgrade', package])
+    execute_script(['-m', 'pip', 'install', '--no-deps', '--no-cache', package])
 
 def is_colab():
     """

@@ -19,6 +19,7 @@ def export_main(unused_argv):
     export_parameters.update_values()
     # Check if the export directory is specified
     if (not export_parameters.output_directory):
+        print('Export parameters not set. Skipping.')
         return;
     # Check if at least an export operation is defined
     if (not export_parameters.trained_checkpoint_dir and

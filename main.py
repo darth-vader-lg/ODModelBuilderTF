@@ -34,6 +34,17 @@ def main(unused_argv):
         export_main(unused_argv)
     except (KeyboardInterrupt, SystemExit):
         pass
+    try:
+        if (not is_executable()):
+            print('=' * 80)
+            print('=' * 80)
+            print('=' * 80)
+            print('=' * 80)
+            print('Evaluate the model')
+        from    eval_main import eval_main
+        eval_main(unused_argv)
+    except (KeyboardInterrupt, SystemExit):
+        pass
 
 if __name__ == '__main__':
     if (not is_executable()):
@@ -50,6 +61,8 @@ if __name__ == '__main__':
         from train_main import train_main
         allow_flags_override()
         from export_main import export_main
+        allow_flags_override()
+        from eval_main import eval_main
         # Validate the hypothetical empty mandatory flags values and call the main
         from absl import flags
         for flag in ['model_dir', 'pipeline_config_path', 'trained_checkpoint_dir', 'output_directory']:
@@ -61,3 +74,12 @@ if __name__ == '__main__':
     except SystemExit:
         if (not is_executable()):
             print('End')
+
+# Train example
+# --model_type="SSD MobileNet v2 320x320" --train_images_dir=D:\ObjectDetection\carp\TensorFlow\images\train --eval_images_dir=D:\ObjectDetection\carp\TensorFlow\images\eval --model_dir=trained-model --num_train_steps=100000 --batch_size=16
+
+# Eval example
+# --num_train_steps=0 --checkpoint_dir=trained-model
+
+# Export example
+# --num_train_steps=0 --trained_checkpoint_dir=trained-model  --output_directory=D:\ObjectDetection\carp\TensorFlow\export --onnx=carp.onnx --frozen_graph=carp.pb

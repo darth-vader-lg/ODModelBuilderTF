@@ -13,19 +13,14 @@ class TrainParameters(BaseParameters):
         self._pipeline_config_path = os.path.join(self.annotations_dir, 'pipeline.config')
         self._num_train_steps = Cfg.max_train_steps if Cfg.max_train_steps > -1 else None
         self._eval_on_train_data = False
-        self._sample_1_of_n_eval_examples = None
-        self._sample_1_of_n_eval_on_train_examples = 5
-        self._checkpoint_dir = None
-        self._eval_timeout = 3600
         self._use_tpu = False
         self._tpu_name = None
         self._num_workers = 1
         self._checkpoint_every_n = 1000
         self._record_summaries = True
         self._batch_size = Cfg.batch_size if Cfg.batch_size > 1 else None
-        self._tensorboard_port = 6006
+        self._tensorboard_port = 8080
         self._is_path.extend([
-            'pipeline_config_path',
             'checkpoint_dir'])
     default = None
     @property
@@ -40,22 +35,6 @@ class TrainParameters(BaseParameters):
     def eval_on_train_data(self): return self._eval_on_train_data
     @eval_on_train_data.setter
     def eval_on_train_data(self, value): self._eval_on_train_data = value
-    @property
-    def sample_1_of_n_eval_examples(self): return self._sample_1_of_n_eval_examples
-    @sample_1_of_n_eval_examples.setter
-    def sample_1_of_n_eval_examples(self, value): self._sample_1_of_n_eval_examples = value
-    @property
-    def sample_1_of_n_eval_on_train_examples(self): return self._sample_1_of_n_eval_on_train_examples
-    @sample_1_of_n_eval_on_train_examples.setter
-    def sample_1_of_n_eval_on_train_examples(self, value): self._sample_1_of_n_eval_on_train_examples = value
-    @property
-    def checkpoint_dir(self): return self._checkpoint_dir
-    @checkpoint_dir.setter
-    def checkpoint_dir(self, value): self._checkpoint_dir = value
-    @property
-    def eval_timeout(self): return self._eval_timeout
-    @eval_timeout.setter
-    def eval_timeout(self, value): self._eval_timeout = value
     @property
     def use_tpu(self): return self._use_tpu
     @use_tpu.setter

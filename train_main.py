@@ -16,7 +16,7 @@ flags.DEFINE_string ('eval_images_dir', None, 'Path to the directory '
                      'containing the images for evaluate and their labeling xml.')
 flags.DEFINE_integer('batch_size', 0, 'The size of batch. If < 1 it uses the '
                      'value contained in the pipeline configuration file.')
-flags.DEFINE_integer('tensorboard_port', 6006, 'The port of the tensorboard server')
+flags.DEFINE_integer('tensorboard_port', 8080, 'The port of the tensorboard server')
 
 def train_main(unused_argv):
     # Init the train environment
@@ -27,8 +27,9 @@ def train_main(unused_argv):
     from train_pipeline import config_train_pipeline
     train_parameters = TrainParameters()
     train_parameters.update_values()
-    # Check if the numer of train steps is 0
+    # Check if the number of train steps is 0
     if (train_parameters.num_train_steps == 0 or not train_parameters.model_dir):
+        print('Train parameters not set. Skipping.')
         return
     init_train_environment(train_parameters)
     download_pretrained_model(train_parameters)

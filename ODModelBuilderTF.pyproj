@@ -41,6 +41,9 @@
     <Compile Include="default_cfg.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="eval_main.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="export_frozen_graph.py">
       <SubType>Code</SubType>
     </Compile>
@@ -62,6 +65,8 @@
     <Compile Include="export_main.py" />
     <Compile Include="export_parameters.py" />
     <Compile Include="export_environment.py" />
+    <Compile Include="eval_environment.py" />
+    <Compile Include="eval_parameters.py" />
     <Compile Include="train_pipeline.py">
       <SubType>Code</SubType>
     </Compile>
@@ -91,6 +96,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="build_exe.bat" />
+    <Content Include="env_shell.bat" />
     <Content Include="install_virtual_environment.bat" />
     <Content Include="ODModelBuilderTF.spec" />
     <Content Include="py_to_ODModelBuilderTF_ipynb.bat" />

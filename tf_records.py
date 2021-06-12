@@ -154,7 +154,7 @@ def create_tf_records(prm: BaseParameters):
     TFRecord().create_tf_record(
         prm.train_images_dir,
         os.path.join(prm.annotations_dir, 'train.record'),
-        os.path.join(prm.annotations_dir, 'label_map.pbtxt'))
+        os.path.join(prm.annotations_dir, 'label_map.pbtxt')) # TODO: Check if there is already a label definition file and use it
     print("Creating TFRecord for the evaluation images...")
     TFRecord().create_tf_record(
         prm.eval_images_dir,

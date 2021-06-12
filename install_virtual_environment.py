@@ -65,8 +65,10 @@ def install_virtual_environment(env_name: str = env_name):
     if (force_install_requirements or (os.path.isfile('requirements.txt') and check_requirements('requirements.txt') > 0)):
         print('Installing the requirements')
         try:
-            execute_script(['-m', 'pip', 'install', '--upgrade', '-r', 'requirements.txt'])
+            execute_script(['-m', 'pip', 'install', '--no-deps', '--no-cache', '-r', 'requirements.txt'])
         except subprocess.CalledProcessError as exc:
+            print ("Error!!!")
+            print(exc)
             return exc.returncode
     # Install the object detection environment
     if (not get_package_info('object-detection').version):
@@ -75,9 +77,15 @@ def install_virtual_environment(env_name: str = env_name):
             from od_install import install_object_detection
             install_object_detection()
         except subprocess.CalledProcessError as exc:
+            print ("Error!!!")
+            print(exc)
             return exc.returncode
     # Force uninstall of the not compatible with Python >= 3.7 dataclasses package
-    execute_script(['-m', 'pip', 'uninstall', '-y', 'dataclasses'])
+    try:
+        import pkg_resources as pkg
+        pkg.require('dataclasses')
+        execute_script(['-m', 'pip', 'uninstall', '-y', 'dataclasses'])
+    except Exception as e: pass
     return 0
 
 if __name__ == '__main__':

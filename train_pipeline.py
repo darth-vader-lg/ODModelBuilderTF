@@ -19,10 +19,10 @@ def config_train_pipeline(prm: TrainParameters):
     import  tempfile
     # Copy the pipeline configuration file if it's not already present in the output dir
     print('Configuring the pipeline')
+    pre_trained_model_dir = os.path.join(prm.pre_trained_model_base_dir, prm.model['dir_name'])
     output_file = prm.pipeline_config_path
     if (not output_file):
         output_file = prm.pipeline_config_path = os.path.join(prm.annotations_dir, 'pipeline.config')
-        pre_trained_model_dir = os.path.join(prm.pre_trained_model_base_dir, prm.model['dir_name'])
         pre_trained_cfg_file = os.path.join(
             pre_trained_model_dir,
             'pipeline.config')
