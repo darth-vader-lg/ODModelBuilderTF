@@ -53,13 +53,10 @@ namespace ODModelBuilderTF
          // Store the current directory
          var cd = Environment.CurrentDirectory;
          // Token to stop the output trace
-         var traceCancel = new CancellationTokenSource();
          try {
             // Set the current directory in the root of the python environment
             if (!string.IsNullOrEmpty(workingDir))
                Environment.CurrentDirectory = workingDir;
-            // Run the script
-            TracePythonOutputs(traceCancel.Token);
             // Execute the script
             using var gil = Py.GIL();
             ((PyScope)py).Exec(script);
@@ -80,8 +77,6 @@ namespace ODModelBuilderTF
          finally {
             // Restore the previous directory
             Environment.CurrentDirectory = cd;
-            // Stop the trace
-            traceCancel.Cancel();
          }
          return 0;
       }
@@ -107,8 +102,6 @@ namespace ODModelBuilderTF
       {
          // Create a mutex to avoid overlapped initializations
          using var mutex = new Mutex(true, !string.IsNullOrEmpty(virtualEnvPath) ? virtualEnvPath.Replace("\\", "_").Replace(":", "-") : Assembly.GetEntryAssembly().GetName().Name);
-         // Token for trace stop
-         CancellationTokenSource traceCancel;
          // Check if it's required a virtual environment
          if (!string.IsNullOrEmpty(virtualEnvPath)) {
             // Name of the downloaded Python zip file and the get pip script
@@ -183,6 +176,9 @@ namespace ODModelBuilderTF
                }
             }
          }
+         // Initialize the python engine and enable thread execution
+         PythonEngine.Initialize();
+         PythonEngine.BeginAllowThreads();
          // Create the python scope and set the python executable
          using (Py.GIL()) {
             py ??= Py.CreateScope();
@@ -192,75 +188,70 @@ namespace ODModelBuilderTF
          // Redirect the python's outputs
          RedirectOutputs(redirectStdout, redirectStderr);
          // Token to stop the tracing
-         traceCancel = new CancellationTokenSource();
-         try {
-            // Enable the trace of the output
-            TracePythonOutputs(traceCancel.Token);
-            // Read the requirements file
-            var requirementsRes = Assembly.GetExecutingAssembly().GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("requirements.txt"));
-            using var requirements = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(requirementsRes));
-            // Define the packages installation functions
-            using (Py.GIL()) {
-               var sb = new StringBuilder();
-               sb.AppendLine("def check_package(package_name, print_exc=False):");
-               sb.AppendLine("  import pkg_resources as pkg");
-               sb.AppendLine("  try:");
-               sb.AppendLine("    pkg.get_distribution(package_name)");
-               sb.AppendLine("    return True");
-               sb.AppendLine("  except Exception as e:");
-               sb.AppendLine("    if (print_exc):");
-               sb.AppendLine("       print(e)");
-               sb.AppendLine("    return False");
-               sb.AppendLine("");
-               sb.AppendLine("def install_package(package_name):");
-               sb.AppendLine("  import subprocess");
-               sb.AppendLine("  print(subprocess.check_output(['python.exe', '-m', 'pip', 'install', '--no-deps', package_name], shell=True).decode())");
-               py.Exec(sb.ToString());
-            }
-            // Install the required packages
-            for (var line = requirements.ReadLine(); line != null; line = requirements.ReadLine()) {
-               using var gil = Py.GIL();
-               if (!py.check_package(line, true))
-                  py.install_package(line);
-            }
-            // Import the object detection modules
-            var modules = new[]
-            {
-               "default_cfg",
-               "model_types",
-               "utilities",
-               "base_parameters",
-               "eval_parameters",
-               "export_parameters",
-               "train_parameters",
-               "eval_main",
-               "export_environment",
-               "export_frozen_graph",
-               "export_main",
-               "export_model_config",
-               "export_onnx",
-               "main",
-               "od_install",
-               "pretrained_model",
-               "tf_records",
-               "train_environment",
-               "train_main",
-               "train_pipeline",
-               "train_tensorboard",
-            };
-            foreach (var module in modules) {
-               using var gil = Py.GIL();
-               py.Import(PythonEngine.ModuleFromString(module, GetPythonScript($"{module}.py")));
-            }
-            // Install the object detection system
-            using (Py.GIL()) {
-               if (!py.check_package("object-detection"))
-                  py.od_install.install_object_detection();
-            }
+         var traceCancel = new CancellationTokenSource();
+         PythonEngine.AddShutdownHandler(() => traceCancel.Cancel());
+         // Enable the trace of the output
+         TracePythonOutputs(traceCancel.Token);
+         // Read the requirements file
+         var requirementsRes = Assembly.GetExecutingAssembly().GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("requirements.txt"));
+         using var requirements = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(requirementsRes));
+         // Define the packages installation functions
+         using (Py.GIL()) {
+            var sb = new StringBuilder();
+            sb.AppendLine("def check_package(package_name, print_exc=False):");
+            sb.AppendLine("  import pkg_resources as pkg");
+            sb.AppendLine("  try:");
+            sb.AppendLine("    pkg.get_distribution(package_name)");
+            sb.AppendLine("    return True");
+            sb.AppendLine("  except Exception as e:");
+            sb.AppendLine("    if (print_exc):");
+            sb.AppendLine("       print(e)");
+            sb.AppendLine("    return False");
+            sb.AppendLine("");
+            sb.AppendLine("def install_package(package_name):");
+            sb.AppendLine("  import subprocess");
+            sb.AppendLine("  print(subprocess.check_output(['python.exe', '-m', 'pip', 'install', '--no-deps', package_name], shell=True).decode())");
+            py.Exec(sb.ToString());
          }
-         finally {
-            // Stop the trace
-            traceCancel.Cancel();
+         // Install the required packages
+         for (var line = requirements.ReadLine(); line != null; line = requirements.ReadLine()) {
+            using var gil = Py.GIL();
+            if (!py.check_package(line, true))
+               py.install_package(line);
+         }
+         // Import the object detection modules
+         var modules = new[]
+         {
+            "default_cfg",
+            "model_types",
+            "utilities",
+            "base_parameters",
+            "eval_parameters",
+            "export_parameters",
+            "train_parameters",
+            "eval_main",
+            "export_environment",
+            "export_frozen_graph",
+            "export_main",
+            "export_model_config",
+            "export_onnx",
+            "main",
+            "od_install",
+            "pretrained_model",
+            "tf_records",
+            "train_environment",
+            "train_main",
+            "train_pipeline",
+            "train_tensorboard",
+         };
+         foreach (var module in modules) {
+            using var gil = Py.GIL();
+            py.Import(PythonEngine.ModuleFromString(module, GetPythonScript($"{module}.py")));
+         }
+         // Install the object detection system
+         using (Py.GIL()) {
+            if (!py.check_package("object-detection"))
+               py.od_install.install_object_detection();
          }
          // Initialization terminated
          initialized = true;
@@ -316,10 +307,14 @@ namespace ODModelBuilderTF
             while (!cancel.IsCancellationRequested) {
                // Delay
                await Task.Delay(500, cancel).ContinueWith(t => { });
+               if (cancel.IsCancellationRequested)
+                  return;
                // Read from buffers and output the trace
                using (Py.GIL()) {
                   if (redirectStdout) {
                      try {
+                        if (cancel.IsCancellationRequested)
+                           return;
                         stdout = py.stdout.getvalue().ToString();
                         var newLen = stdout.Length;
                         if (newLen > lenOut) {
@@ -333,6 +328,8 @@ namespace ODModelBuilderTF
                   }
                   if (redirectStderr) {
                      try {
+                        if (cancel.IsCancellationRequested)
+                           return;
                         stderr = py.stderr.getvalue().ToString();
                         var newLen = stderr.Length;
                         if (newLen > lenErr) {
