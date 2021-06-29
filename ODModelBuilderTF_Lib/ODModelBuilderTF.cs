@@ -282,6 +282,15 @@ namespace ODModelBuilderTF
          redirectStderr = stderr;
       }
       /// <summary>
+      /// Function for test
+      /// </summary>
+      public static void TestPythonThread(string name) //@@@
+      {
+         CheckInitialization();
+         using var gil = Py.GIL();
+         py.main.main_test(new PyString(name));
+      }
+      /// <summary>
       /// Trace the python's outputs
       /// </summary>
       /// <param name="cancel">Cancellation token</param>

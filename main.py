@@ -46,6 +46,12 @@ def main(unused_argv):
     except (KeyboardInterrupt, SystemExit):
         pass
 
+def main_test(name): #@@@
+    import time
+    for i in range(10):
+        time.sleep(1)
+        print(f'{name} {i}')
+
 if __name__ == '__main__':
     if (not is_executable()):
         from install_virtual_environment import install_virtual_environment
