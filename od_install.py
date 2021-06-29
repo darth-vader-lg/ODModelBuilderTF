@@ -115,7 +115,7 @@ def install_object_detection():
             sys.path.append(path)
     # Directory of the onnx converter and commit id
     tf2onnx_git_sha1 = '596f23741b1b5476e720089ed0dfd5dbcc5a44d0'
-    tf2onnx_dir = os.path.join(tempfile.gettempdir(), 'tfensorflow-onnx-' + tf2onnx_git_sha1)
+    tf2onnx_dir = os.path.join(tempfile.gettempdir(), 'tensorflow-onnx-' + tf2onnx_git_sha1)
     # Install the onnx converter
     is_installed = False
     try:
