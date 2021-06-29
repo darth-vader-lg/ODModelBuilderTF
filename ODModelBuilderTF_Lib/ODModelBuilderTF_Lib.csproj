@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <AssemblyName>ODModelBuilderTF</AssemblyName>
+    <RootNamespace>ODModelBuilderTF</RootNamespace>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Train, evaluation, export library for TensorFlow object detection</Description>
+    <Copyright>Copyright 2021 darth-vader-lg</Copyright>
+    <PackageLicenseExpression />
+    <PackageLicenseFile>licence.txt</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/darth-vader-lg</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/darth-vader-lg/ODModelBuilderTF.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <NeutralLanguage />
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="py\requirements.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\requirements.txt" Link="py\requirements.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\base_parameters.py" Link="py\base_parameters.py" />
+    <EmbeddedResource Include="..\build_exe.py" Link="py\build_exe.py" />
+    <EmbeddedResource Include="..\default_cfg.py" Link="py\default_cfg.py" />
+    <EmbeddedResource Include="..\eval_environment.py" Link="py\eval_environment.py" />
+    <EmbeddedResource Include="..\eval_main.py" Link="py\eval_main.py" />
+    <EmbeddedResource Include="..\eval_parameters.py" Link="py\eval_parameters.py" />
+    <EmbeddedResource Include="..\export_environment.py" Link="py\export_environment.py" />
+    <EmbeddedResource Include="..\export_frozen_graph.py" Link="py\export_frozen_graph.py" />
+    <EmbeddedResource Include="..\export_main.py" Link="py\export_main.py" />
+    <EmbeddedResource Include="..\export_model_config.py" Link="py\export_model_config.py" />
+    <EmbeddedResource Include="..\export_onnx.py" Link="py\export_onnx.py" />
+    <EmbeddedResource Include="..\export_parameters.py" Link="py\export_parameters.py" />
+    <EmbeddedResource Include="..\install_virtual_environment.py" Link="py\install_virtual_environment.py" />
+    <EmbeddedResource Include="..\main.py" Link="py\main.py" />
+    <EmbeddedResource Include="..\model_types.py" Link="py\model_types.py" />
+    <EmbeddedResource Include="..\mount_google_drive.py" Link="py\mount_google_drive.py" />
+    <EmbeddedResource Include="..\od_install.py" Link="py\od_install.py" />
+    <EmbeddedResource Include="..\pretrained_model.py" Link="py\pretrained_model.py" />
+    <EmbeddedResource Include="..\tf_records.py" Link="py\tf_records.py" />
+    <EmbeddedResource Include="..\train_environment.py" Link="py\train_environment.py" />
+    <EmbeddedResource Include="..\train_main.py" Link="py\train_main.py" />
+    <EmbeddedResource Include="..\train_parameters.py" Link="py\train_parameters.py" />
+    <EmbeddedResource Include="..\train_pipeline.py" Link="py\train_pipeline.py" />
+    <EmbeddedResource Include="..\train_tensorboard.py" Link="py\train_tensorboard.py" />
+    <EmbeddedResource Include="..\utilities.py" Link="py\utilities.py" />
+    <None Include="licence.txt">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="pythonnet_netstandard_py37_win" Version="2.5.2" />
+  </ItemGroup>
+
+</Project>
