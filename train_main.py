@@ -14,6 +14,8 @@ flags.DEFINE_string ('train_images_dir', None, 'Path to the directory '
                      'containing the images for train and their labeling xml.')
 flags.DEFINE_string ('eval_images_dir', None, 'Path to the directory '
                      'containing the images for evaluate and their labeling xml.')
+flags.DEFINE_string ('annotations_dir', None, 'Path to the directory '
+                     'containing the computed tensorflow records.')
 flags.DEFINE_integer('batch_size', 0, 'The size of batch. If < 1 it uses the '
                      'value contained in the pipeline configuration file.')
 flags.DEFINE_integer('tensorboard_port', 8080, 'The port of the tensorboard server')
