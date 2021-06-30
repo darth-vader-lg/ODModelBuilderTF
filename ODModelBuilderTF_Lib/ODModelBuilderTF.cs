@@ -380,6 +380,74 @@ namespace ODModelBuilderTF
             }
          }, cancel);
       }
+      /// <summary>
+      /// Model train
+      /// </summary>
+      public static void Train()
+      {
+         // Directory for the tf records
+         var annotationsDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+         try {
+            // Acquire the GIL
+            using var gil = Py.GIL();
+            // Create a new scope
+            var pyTrain = ((PyScope)py).NewScope();
+            // Prepare the arguments
+            dynamic sys = pyTrain.Import("sys");
+            sys.argv = new PyList(
+               new PyObject[]
+               {
+                  Assembly.GetEntryAssembly().Location.ToPython(),
+                  "--model_type".ToPython(), "SSD MobileNet v2 320x320".ToPython(),
+                  "--train_images_dir".ToPython(), "D:\\ObjectDetection\\caz\\TensorFlow\\images\\train".ToPython(),
+                  "--eval_images_dir".ToPython(), "D:\\ObjectDetection\\caz\\TensorFlow\\images\\eval".ToPython(),
+                  "--model_dir".ToPython(), "D:\\ObjectDetection\\caz\\TensorFlow\\trained-model".ToPython(),
+                  "--annotations_dir".ToPython(), annotationsDir.ToPython(),
+                  "--tensorboard_port".ToPython(), "6006".ToPython(),
+                  "--num_train_steps".ToPython(), "50000".ToPython(),
+                  "--batch_size".ToPython(), "16".ToPython()
+               });
+            // Import the main of the training
+            dynamic train_main = pyTrain.Import("train_main");
+            // Import the module here just for having the flags defined
+            train_main.allow_flags_override();
+            pyTrain.Import("object_detection.model_main_tf2");
+            // Import the TensorFlow
+            dynamic tf = pyTrain.Import("tensorflow");
+            try {
+               // Create annotation dir and start the train
+               Directory.CreateDirectory(annotationsDir);
+               tf.compat.v1.app.run(train_main.train_main);
+            }
+            catch (PythonException exc) {
+               // Response to the exceptions
+               var action = exc.PyType switch
+               {
+                  var pexc when pexc == Exceptions.SystemExit => new Action(() => { }),
+                  var pexc when pexc == Exceptions.KeyboardInterrupt => new Action(() =>
+                  {
+                     Trace.WriteLine("Interrupted by user");
+                  }),
+                  _ => new Action(() =>
+                  {
+                     Trace.WriteLine(exc.ToString().Replace("\\n", Environment.NewLine));
+                     throw exc;
+                  })
+               };
+               action();
+            }
+         }
+         finally {
+            // Delete the annotations directory
+            try {
+               if (Directory.Exists(annotationsDir))
+                  Directory.Delete(annotationsDir, true);
+            }
+            catch (Exception exc) {
+               Trace.WriteLine(exc);
+            }
+         }
+      }
       #endregion
    }
 }
