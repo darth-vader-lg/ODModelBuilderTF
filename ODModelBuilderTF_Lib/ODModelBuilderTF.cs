@@ -12,6 +12,9 @@ using System.Threading.Tasks;
 
 namespace ODModelBuilderTF
 {
+   /// <summary>
+   /// Class for the Python object detection model builder interfacing
+   /// </summary>
    public static class ODModelBuilderTF
    {
       #region Fields
@@ -216,8 +219,40 @@ namespace ODModelBuilderTF
          // Install the required packages
          for (var line = requirements.ReadLine(); line != null; line = requirements.ReadLine()) {
             using var gil = Py.GIL();
-            if (!py.check_package(line, true))
+            if (!py.check_package(line, true)) {
+               if (line.StartsWith("tensorflow==")) {
+                  var sbCudaVer = new StringBuilder();
+                  try {
+                     var nvccProcess = new Process();
+                     nvccProcess.StartInfo.FileName = "nvcc.exe";
+                     nvccProcess.StartInfo.Arguments = "--version";
+                     nvccProcess.StartInfo.UseShellExecute = false;
+                     nvccProcess.StartInfo.RedirectStandardOutput = true;
+                     nvccProcess.StartInfo.CreateNoWindow = true;
+                     nvccProcess.OutputDataReceived += (sender, e) =>
+                     {
+                        if (e.Data != null)
+                           sbCudaVer.AppendLine(e.Data);
+                     };
+                     nvccProcess.Start();
+                     nvccProcess.BeginOutputReadLine();
+                     nvccProcess.WaitForExit();
+                     nvccProcess.CancelOutputRead();
+                  }
+                  catch (Exception) {
+                  }
+                  if (sbCudaVer.ToString().Contains("V10.1")) {
+                     var version = line.Substring(line.IndexOf("==") + 2).Trim();
+                     var whls =
+                        Directory.GetFiles(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Packages"), "*.whl")
+                        .Where(file => { var name = Path.GetFileName(file).ToLower(); return name.Contains("tensorflow") && name.Contains("cp37") && name.Contains(version); })
+                        .FirstOrDefault();
+                     if (whls != default)
+                        line = whls.Replace("\\", "/");
+                  }
+               }
                py.install_package(line);
+            }
          }
          // Import the object detection modules
          var modules = new[]
