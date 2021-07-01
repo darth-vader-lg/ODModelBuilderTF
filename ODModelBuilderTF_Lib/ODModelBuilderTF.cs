@@ -1,5 +1,6 @@
 ﻿using Python.Runtime;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -206,17 +207,16 @@ namespace ODModelBuilderTF
          // Create the python scope with right paths and set the python executable
          using (Py.GIL()) {
             py ??= Py.CreateScope();
-            py.Exec(
-               $"import sys\n" +
-               $"sys.path = [\n" +
-               $"  '{virtualEnvPath.Replace("\\", "\\\\")}',\n" +
-               $"  '{Path.Combine(virtualEnvPath, "Scripts").Replace("\\", "\\\\")}',\n" +
-               $"  '{Path.Combine(virtualEnvPath, "Lib", "site-packages").Replace("\\", "\\\\")}',\n" +
-               $"  '{Path.Combine(virtualEnvPath, "Lib").Replace("\\", "\\\\")}',\n" +
-               $"  '{Path.Combine(virtualEnvPath, "DLLs").Replace("\\", "\\\\")}'\n" +
-               $"]\n" +
-               $"sys.executable = '{Path.Combine(virtualEnvPath, "python.exe").Replace("\\", "\\\\")}'"
-               );
+            py.Import("sys");
+            py.sys.path = new PyList(new[]
+            {
+               virtualEnvPath,
+               Path.Combine(virtualEnvPath, "Scripts"),
+               Path.Combine(virtualEnvPath, "DLLs"),
+               Path.Combine(virtualEnvPath, "Lib"),
+               Path.Combine(virtualEnvPath, "Lib", "site-packages")
+            }.Select(p => p.ToPython()).ToArray());
+            py.sys.executable = Path.Combine(virtualEnvPath, "python.exe").ToPython();
          }
          // Redirect the python's outputs
          RedirectOutputs(redirectStdout, redirectStderr);
@@ -225,93 +225,115 @@ namespace ODModelBuilderTF
          PythonEngine.AddShutdownHandler(() => traceCancel.Cancel());
          // Enable the trace of the output
          TracePythonOutputs(traceCancel.Token);
-         // Read the requirements file
-         var requirementsRes = Assembly.GetExecutingAssembly().GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("requirements.txt"));
-         using var requirements = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(requirementsRes));
-         // Define the packages installation functions
+         // Package resources module and workingset
+         dynamic pkg;
+         dynamic workingSet;
          using (Py.GIL()) {
-            var sb = new StringBuilder();
-            sb.AppendLine("def check_package(package_name, print_exc=False, deep_check=False):");
-            sb.AppendLine("  import pkg_resources as pkg");
-            sb.AppendLine("  try:");
-            sb.AppendLine("    if (deep_check):");
-            sb.AppendLine("      pkg.require(package_name)");
-            sb.AppendLine("      return True");
-            sb.AppendLine("    else:");
-            sb.AppendLine("      return pkg.WorkingSet().find(pkg.Requirement(package_name))");
-            sb.AppendLine("  except Exception as e:");
-            sb.AppendLine("    if (print_exc):");
-            sb.AppendLine("      print(e)");
-            sb.AppendLine("    return False");
-            sb.AppendLine("");
-            sb.AppendLine("def install_package(package_name):");
-            sb.AppendLine("  import subprocess");
-            sb.AppendLine("  print(subprocess.check_output(['python.exe', '-m', 'pip', 'install', '--no-deps', package_name], shell=True).decode())");
-            sb.AppendLine("def upgrade_pip():");
-            sb.AppendLine("  import subprocess");
-            sb.AppendLine("  print(subprocess.check_output(['python.exe', '-m', 'pip', 'install', '--upgrade', pip], shell=True).decode())");
-            py.Exec(sb.ToString());
+            py.Import("pkg_resources");
+            pkg = py.pkg_resources;
+            workingSet = pkg.WorkingSet();
+         }
+         // Define the package check function
+         static List<string> GetMissingRequirements(IEnumerable<string> requirements)
+         {
+            // List of missing packages
+            var result = new List<string>();
+            using (Py.GIL()) {
+               // Package resources module and workingset
+               py.Import("pkg_resources");
+               var pkg = py.pkg_resources;
+               var ws = pkg.WorkingSet();
+               // Check all requirements
+               foreach (var req in requirements) {
+                  // Skip comments and blank lines
+                  if (string.IsNullOrWhiteSpace(req) || req.TrimStart().StartsWith("#"))
+                     continue;
+                  // Check if the package exists
+                  if (ws.find(pkg.Requirement(req)) == null)
+                     result.Add(req);
+               }
+            }
+            // Return the list of missing packages
+            return result;
          }
          // Install the required packages
          try {
-            // Read all lines from the requirements
-            var lines = requirements.ReadToEnd().Split(Environment.NewLine);
-            // Check for missing installations
-            var missingPackage = false;
-            for (var i = 0; i < lines.Length; i++) {
-               var package = lines[i];
-               // Check if is just a comment or a blank line
-               if (string.IsNullOrWhiteSpace(package) || package.TrimStart().StartsWith("#"))
-                  continue;
-               // Choose the right tensorflow for the installed CUDA
-               if (package.StartsWith("tensorflow==")) {
-                  var sbCudaVer = new StringBuilder();
-                  try {
-                     var nvccProcess = new Process();
-                     nvccProcess.StartInfo.FileName = "nvcc.exe";
-                     nvccProcess.StartInfo.Arguments = "--version";
-                     nvccProcess.StartInfo.UseShellExecute = false;
-                     nvccProcess.StartInfo.RedirectStandardOutput = true;
-                     nvccProcess.StartInfo.CreateNoWindow = true;
-                     nvccProcess.OutputDataReceived += (sender, e) =>
-                     {
-                        if (e.Data != null)
-                           sbCudaVer.AppendLine(e.Data);
-                     };
-                     nvccProcess.Start();
-                     nvccProcess.BeginOutputReadLine();
-                     nvccProcess.WaitForExit();
-                     nvccProcess.CancelOutputRead();
-                  }
-                  catch (Exception) {
-                  }
-                  if (sbCudaVer.ToString().Contains("V10.1")) {
-                     var version = package.Substring(package.IndexOf("==") + 2).Trim();
-                     var whl =
-                        Directory.GetFiles(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Packages"), "*.whl")
-                        .Where(file => { var name = Path.GetFileName(file).ToLower(); return name.Contains("tensorflow") && name.Contains("cp37") && name.Contains(version); })
-                        .FirstOrDefault();
-                     if (whl != default)
-                        lines[i] = whl;
-                  }
-               }
-               if (!missingPackage) {
-                  using (Py.GIL()) {
-                     if (!py.check_package(package, false, false)) {
-                        Trace.WriteLine($"Missing package {package}");
-                        missingPackage = true;
-                     }
-                  }
-               }
-            }
-            if (missingPackage) {
+            // Read the requirements file
+            var requirementsRes = Assembly.GetExecutingAssembly().GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("requirements.txt"));
+            using var requirementsContent = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(requirementsRes));
+            // Read all requirements from the requirements file
+            var requirements = requirementsContent.ReadToEnd().Split(Environment.NewLine);
+            // Get the list of missing packages
+            var missing = GetMissingRequirements(requirements);
+            if (missing.Count > 0) {
+               // Trace the missing packages
+               Trace.WriteLine("The following requirements are missing:");
+               missing.ForEach(req => Trace.WriteLine(req));
+               Trace.WriteLine("Installing.");
+               // Create a temporary requirements file
                var tempRequirements = Path.GetTempFileName();
-               using (var writer = new StreamWriter(tempRequirements))
-                  writer.Write(string.Join(Environment.NewLine, lines));
-               using (Py.GIL()) {
-                  py.Import(PythonEngine.ModuleFromString("utilities", GetPythonScript("utilities.py")));
-                  py.utilities.execute_script(new[] { "-m", "pip", "install", "--upgrade", "pip" });
-                  py.utilities.execute_script(new[] { "-m", "pip", "install", "--no-deps", "-r", tempRequirements });
+               try {
+                  using var writer = new StreamWriter(tempRequirements);
+                  for (var i = 0; i < missing.Count; i++) {
+                     var package = missing[i];
+                     // Check if is just a comment or a blank line
+                     if (string.IsNullOrWhiteSpace(package) || package.TrimStart().StartsWith("#"))
+                        continue;
+                     // Choose the right tensorflow for the installed CUDA
+                     if (package.StartsWith("tensorflow==")) {
+                        var sbCudaVer = new StringBuilder();
+                        try {
+                           var nvccProcess = new Process();
+                           nvccProcess.StartInfo.FileName = "nvcc.exe";
+                           nvccProcess.StartInfo.Arguments = "--version";
+                           nvccProcess.StartInfo.UseShellExecute = false;
+                           nvccProcess.StartInfo.RedirectStandardOutput = true;
+                           nvccProcess.StartInfo.CreateNoWindow = true;
+                           nvccProcess.OutputDataReceived += (sender, e) =>
+                           {
+                              if (e.Data != null)
+                                 sbCudaVer.AppendLine(e.Data);
+                           };
+                           nvccProcess.Start();
+                           nvccProcess.BeginOutputReadLine();
+                           nvccProcess.WaitForExit();
+                           nvccProcess.CancelOutputRead();
+                        }
+                        catch (Exception) {
+                        }
+                        if (sbCudaVer.ToString().Contains("V10.1")) {
+                           var version = package.Substring(package.IndexOf("==") + 2).Trim();
+                           var whl =
+                              Directory.GetFiles(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Packages"), "*.whl")
+                              .Where(file => { var name = Path.GetFileName(file).ToLower(); return name.Contains("tensorflow") && name.Contains("cp37") && name.Contains(version); })
+                              .FirstOrDefault();
+                           if (whl != default)
+                              package = whl;
+                        }
+                     }
+                     writer.WriteLine(package);
+                  }
+                  writer.Close();
+                  // Upgrade pip and install the requirements
+                  using (Py.GIL()) {
+                     py.Import(PythonEngine.ModuleFromString("utilities", GetPythonScript("utilities.py")));
+                     py.utilities.execute_script(new[] { "-m", "pip", "install", "--upgrade", "pip" });
+                     py.utilities.execute_script(new[] { "-m", "pip", "install", "--no-deps", "-r", tempRequirements });
+                  }
+                  // Check for successfully installation
+                  missing = GetMissingRequirements(requirements);
+                  if (missing.Count > 0) {
+                     Trace.WriteLine("Error! Couldn't install some requirements:");
+                     missing.ForEach(req => Trace.WriteLine(req));
+                     throw new Exception("Installation failed");
+                  }
+               }
+               finally {
+                  // Delete the temporary requirements file
+                  try {
+                     File.Delete(tempRequirements);
+                  }
+                  catch { }
                }
             }
          }
@@ -321,15 +343,17 @@ namespace ODModelBuilderTF
          }
          // Install the object detection system
          try {
-            using (Py.GIL()) {
-               if (!py.check_package("object-detection", true, false)) {
+            if (GetMissingRequirements(new[] { "object-detection" }).Count > 0) {
+               using (Py.GIL()) {
                   py.Import(PythonEngine.ModuleFromString("default_cfg", GetPythonScript("default_cfg.py")));
                   py.Import(PythonEngine.ModuleFromString("utilities", GetPythonScript("utilities.py")));
                   py.Import(PythonEngine.ModuleFromString("od_install", GetPythonScript("od_install.py")));
                   py.od_install.install_object_detection(no_deps: true);
                }
-               if (!py.check_package("object-detection", true, false))
-                  throw new Exception("Installation failed");
+            }
+            if (GetMissingRequirements(new[] { "object-detection" }).Count > 0) {
+               Trace.WriteLine("Error! Couldn't install object detection api");
+               throw new Exception("Installation failed");
             }
          }
          catch (Exception exc) {
