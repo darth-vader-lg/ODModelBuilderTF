@@ -65,9 +65,11 @@ def get_package_info(package_name: str):
                 dist = pkg_resources.get_distribution(package_name)
                 self.name = dist.key
                 self.version = dist.version
+                self.requires = dist.requires()
             except:
                 self.name = None
                 self.version = None
+                self.requires = None
             return super().__init__(*args, **kwargs)
     return Result()
 
@@ -89,11 +91,15 @@ def get_type_of_script():
         else:
             return "executable"
 
-def install(package: str):
+def install(package: str, extra_args: []):
     """
     Launch the installer process
     """
-    execute_script(['-m', 'pip', 'install', '--no-deps', '--no-cache', package])
+    script_args = ['-m', 'pip', 'install']
+    if (extra_args):
+        script_args.extend(extra_args)
+    script_args.append(package)
+    execute_script(script_args)
 
 def is_colab():
     """

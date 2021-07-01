@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="py\requirements.txt" />
+    <None Remove="py\Activate.ps1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -49,6 +49,7 @@
     <EmbeddedResource Include="..\train_pipeline.py" Link="py\train_pipeline.py" />
     <EmbeddedResource Include="..\train_tensorboard.py" Link="py\train_tensorboard.py" />
     <EmbeddedResource Include="..\utilities.py" Link="py\utilities.py" />
+    <EmbeddedResource Include="py\Activate.ps1" />
     <None Include="licence.txt">
       <Pack>True</Pack>
       <PackagePath></PackagePath>

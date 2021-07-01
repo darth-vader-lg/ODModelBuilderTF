@@ -80,7 +80,7 @@ def install_virtual_environment(env_name: str = env_name):
             print ("Error!!!")
             print(exc)
             return exc.returncode
-    # Force uninstall of the not compatible with Python >= 3.7 dataclasses package
+    # Uninstall the dataclasses package installed erroneusly (incompatible) for python >=3.7 by tf-models-official
     try:
         import pkg_resources as pkg
         pkg.require('dataclasses')

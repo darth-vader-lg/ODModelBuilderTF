@@ -10,25 +10,26 @@ except: pass
 try:    from    utilities import *
 except: pass
 
-def install_object_detection():
+def install_object_detection(no_deps=True):
     """
     Install a well known environment.
     """
+    install_extra_args = ['--no-deps'] if no_deps else None
     # Install TensorFlow
     is_installed = False
     try:
-        comparing_version = Cfg.tensorflow_version.replace('tensorflow==', '')
-        comparing_version = comparing_version.replace('tf-nightly==', '')
-        comparing_version = comparing_version.replace('.dev', '-dev')
-        is_installed = get_package_info('tensorflow').version == comparing_version
+        tf_comparing_version = Cfg.tensorflow_version.replace('tensorflow==', '')
+        tf_comparing_version = tf_comparing_version.replace('tf-nightly==', '')
+        tf_comparing_version = tf_comparing_version.replace('.dev', '-dev')
+        is_installed = get_package_info('tensorflow').version == tf_comparing_version
     except: pass
     if (not is_installed):
-        install(Cfg.tensorflow_version)
+        install(Cfg.tensorflow_version, install_extra_args)
     else:
         print(f'TensorFlow {Cfg.tensorflow_version} is already installed')
     # Install pygit2
     if (not get_package_info('pygit2').name):
-        install('pygit2==1.5.0')
+        install('pygit2==1.5.0', install_extra_args)
     else:
         print('pygit2 is already installed')
     import pygit2
@@ -79,7 +80,13 @@ def install_object_detection():
         os.chdir(os.path.join(od_api_dir, 'research'))
         # Install the protobuf tools
         if (not get_package_info('grpcio-tools').name):
-            install('grpcio-tools>=1.32.0')
+            tf_package_info = get_package_info('tensorflow')
+            for rq in tf_package_info.requires:
+                if (rq.key == "grpcio"):
+                    install(str(rq).replace('grpcio', 'grpcio-tools'), install_extra_args)
+                    break
+            if (not get_package_info('grpcio-tools').name):
+                raise Exception('Error installing grpcio-tools')
         else:
             print('grpcio-tools is already installed')
         # Compile the protobufs
@@ -93,8 +100,16 @@ def install_object_detection():
         # Install the object detection packages
         print(f'Installing the object detection api.')
         shutil.copy2('object_detection/packages/tf2/setup.py', '.')
-        install('.')
-        # Uninstall this package installed by someother one because incompatible with python >=3.7
+        with open('./setup.py', 'r') as f:
+            lines = f.readlines()
+            for i in range(len(lines)):
+                if ('tf-models-official' in lines[i]):
+                    if (tf_comparing_version.lstrip().startswith('2.4')):
+                        lines[i] = str(lines[i]).replace('tf-models-official', 'tf-models-official==2.4.0')
+        with open('./setup.py', 'w') as f:
+            f.writelines(lines)
+        install('.', install_extra_args)
+        # Uninstall the dataclasses package installed erroneusly (incompatible) for python >=3.7 by tf-models-official
         try:
             import pkg_resources as pkg
             pkg.require('dataclasses')
@@ -147,7 +162,7 @@ def install_object_detection():
         currentDir = os.getcwd()
         os.chdir(tf2onnx_dir)
         # Install the converter
-        install('.')  # TODO: Install the package from GitHub and try with release 1.9.0
+        install('.', install_extra_args)  # TODO: Install the package from GitHub and try with release 1.9.0
         # Return to the original directory
         os.chdir(currentDir)
     else:
