@@ -35,6 +35,10 @@ namespace ODModelBuilderTF
       /// Stdout redirection
       /// </summary>
       private static bool redirectStdout;
+      /// <summary>
+      /// Thread state
+      /// </summary>
+      private static IntPtr ts;
       #endregion
       #region Methods
       /// <summary>
@@ -202,29 +206,33 @@ namespace ODModelBuilderTF
             }
          }
          // Initialize the python engine and enable thread execution
-         PythonEngine.Initialize();
-         PythonEngine.BeginAllowThreads();
-         // Create the python scope with right paths and set the python executable
-         using (Py.GIL()) {
-            py ??= Py.CreateScope();
-            py.Import("sys");
-            py.sys.path = new PyList(new[]
-            {
-               virtualEnvPath,
-               Path.Combine(virtualEnvPath, "Scripts"),
-               Path.Combine(virtualEnvPath, "DLLs"),
-               Path.Combine(virtualEnvPath, "Lib"),
-               Path.Combine(virtualEnvPath, "Lib", "site-packages")
-            }.Select(p => p.ToPython()).ToArray());
-            py.sys.executable = Path.Combine(virtualEnvPath, "python.exe").ToPython();
+         void InitPythonEngine()
+         {
+            PythonEngine.Initialize();
+            // Create the python scope with right paths and set the python executable
+            using (Py.GIL()) {
+               py = Py.CreateScope();
+               py.Import("sys");
+               py.sys.path = new PyList(new[]
+               {
+                  virtualEnvPath,
+                  Path.Combine(virtualEnvPath, "Scripts"),
+                  Path.Combine(virtualEnvPath, "DLLs"),
+                  Path.Combine(virtualEnvPath, "Lib"),
+                  Path.Combine(virtualEnvPath, "Lib", "site-packages")
+               }.Select(p => p.ToPython()).ToArray());
+               py.sys.executable = Path.Combine(virtualEnvPath, "python.exe").ToPython();
+            }
+            // Redirect the python's outputs
+            RedirectOutputs(redirectStdout, redirectStderr);
+            // Token to stop the tracing
+            var traceCancel = new CancellationTokenSource();
+            PythonEngine.AddShutdownHandler(() => traceCancel.Cancel());
+            // Enable the trace of the output
+            TracePythonOutputs(traceCancel.Token);
+            ts = PythonEngine.BeginAllowThreads();
          }
-         // Redirect the python's outputs
-         RedirectOutputs(redirectStdout, redirectStderr);
-         // Token to stop the tracing
-         var traceCancel = new CancellationTokenSource();
-         PythonEngine.AddShutdownHandler(() => traceCancel.Cancel());
-         // Enable the trace of the output
-         TracePythonOutputs(traceCancel.Token);
+         InitPythonEngine();
          // Package resources module and workingset
          dynamic pkg;
          dynamic workingSet;
@@ -257,6 +265,7 @@ namespace ODModelBuilderTF
             return result;
          }
          // Install the required packages
+         var reinit = false;
          try {
             // Read the requirements file
             var requirementsRes = Assembly.GetExecutingAssembly().GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("requirements.txt"));
@@ -266,6 +275,7 @@ namespace ODModelBuilderTF
             // Get the list of missing packages
             var missing = GetMissingRequirements(requirements);
             if (missing.Count > 0) {
+               reinit = true;
                // Trace the missing packages
                Trace.WriteLine("The following requirements are missing:");
                missing.ForEach(req => Trace.WriteLine(req));
@@ -344,6 +354,7 @@ namespace ODModelBuilderTF
          // Install the object detection system
          try {
             if (GetMissingRequirements(new[] { "object-detection" }).Count > 0) {
+               reinit = true;
                using (Py.GIL()) {
                   py.Import(PythonEngine.ModuleFromString("default_cfg", GetPythonScript("default_cfg.py")));
                   py.Import(PythonEngine.ModuleFromString("utilities", GetPythonScript("utilities.py")));
@@ -359,6 +370,16 @@ namespace ODModelBuilderTF
          catch (Exception exc) {
             Trace.WriteLine(exc);
             throw;
+         }
+         reinit = true;
+         if (reinit) {
+            PythonEngine.EndAllowThreads(ts);
+            using (Py.GIL()) {
+               if (py != null)
+                  py.Dispose();
+            }
+            PythonEngine.Shutdown();
+            InitPythonEngine();
          }
          // Import the object detection modules
          var modules = new[]
