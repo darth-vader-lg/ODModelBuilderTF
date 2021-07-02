@@ -224,7 +224,7 @@ namespace ODModelBuilderTF
                py.sys.executable = Path.Combine(virtualEnvPath, "python.exe").ToPython();
             }
             // Redirect the python's outputs
-            RedirectOutputs(redirectStdout, redirectStderr);
+            RedirectOutputs(py, redirectStdout, redirectStderr);
             // Token to stop the tracing
             var traceCancel = new CancellationTokenSource();
             PythonEngine.AddShutdownHandler(() => traceCancel.Cancel());
@@ -416,25 +416,26 @@ namespace ODModelBuilderTF
       /// <summary>
       /// Redirect the outputs of Python to string buffers
       /// </summary>
+      /// <param name="scope">Python scope</param>
       /// <param name="stdout">Redirect the standard output</param>
       /// <param name="stderr">Redirect the standard error</param>
-      private static void RedirectOutputs(bool stdout, bool stderr)
+      private static void RedirectOutputs(PyScope scope, bool stdout, bool stderr)
       {
          using var gil = Py.GIL();
          var sb = new StringBuilder();
-         sb.Append("import sys\n");
-         sb.Append("from io import StringIO\n");
-         sb.Append("stdout = StringIO()\n");
-         sb.Append("stderr = StringIO()\n");
+         dynamic py = scope;
+         py.Import("io");
+         py.Import("sys");
+         py.stdout = py.io.StringIO();
+         py.stderr = py.io.StringIO();
          if (stdout) {
-            sb.Append("sys.stdout = stdout\n");
-            sb.Append("sys.stdout.flush()\n");
+            py.sys.stdout = py.stdout;
+            py.sys.stdout.flush();
          }
          if (stderr) {
-            sb.Append("sys.stderr = stderr\n");
-            sb.Append("sys.stderr.flush()\n");
+            py.sys.stderr = py.stderr;
+            py.sys.stderr.flush();
          }
-         py.Exec(sb.ToString());
          redirectStdout = stdout;
          redirectStderr = stderr;
       }
