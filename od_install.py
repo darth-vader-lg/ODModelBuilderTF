@@ -10,11 +10,15 @@ except: pass
 try:    from    utilities import *
 except: pass
 
-def install_object_detection(no_deps=True):
+def install_object_detection(no_cache=True, no_deps=True):
     """
     Install a well known environment.
     """
-    install_extra_args = ['--no-deps'] if no_deps else None
+    install_extra_args = []
+    if (no_cache):
+        install_extra_args.append('--no-cache')
+    if (no_deps):
+        install_extra_args.append('--no-deps')
     # Install TensorFlow
     is_installed = False
     try:

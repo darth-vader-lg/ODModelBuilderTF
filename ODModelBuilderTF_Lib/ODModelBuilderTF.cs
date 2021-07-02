@@ -328,7 +328,7 @@ namespace ODModelBuilderTF
                   using (Py.GIL()) {
                      py.Import(PythonEngine.ModuleFromString("utilities", GetPythonScript("utilities.py")));
                      py.utilities.execute_script(new[] { "-m", "pip", "install", "--upgrade", "pip" });
-                     py.utilities.execute_script(new[] { "-m", "pip", "install", "--no-deps", "-r", tempRequirements });
+                     py.utilities.execute_script(new[] { "-m", "pip", "install", "--no-cache", "--no-deps", "-r", tempRequirements });
                   }
                   // Check for successfully installation
                   missing = GetMissingRequirements(requirements);
@@ -359,7 +359,7 @@ namespace ODModelBuilderTF
                   py.Import(PythonEngine.ModuleFromString("default_cfg", GetPythonScript("default_cfg.py")));
                   py.Import(PythonEngine.ModuleFromString("utilities", GetPythonScript("utilities.py")));
                   py.Import(PythonEngine.ModuleFromString("od_install", GetPythonScript("od_install.py")));
-                  py.od_install.install_object_detection(no_deps: true);
+                  py.od_install.install_object_detection(no_cache: true, no_deps: true);
                }
             }
             if (GetMissingRequirements(new[] { "object-detection" }).Count > 0) {

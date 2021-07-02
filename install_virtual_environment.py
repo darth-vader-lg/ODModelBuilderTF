@@ -4,10 +4,11 @@ import  sys
 # The name of the virtual environment
 env_name = 'env'
 
-def check_requirements(requirements='requirements.txt', exclude=()):
+def check_requirements(requirements='requirements.txt', exclude=(), no_deps=True):
     # Check installed dependencies meet requirements (pass *.txt file or list of packages)
     import pkg_resources as pkg
     from pathlib import Path
+    working_set = pkg.WorkingSet() if no_deps else None
     if isinstance(requirements, (str, Path)):  # requirements.txt file
         file = Path(requirements)
         if not file.exists():
@@ -17,19 +18,26 @@ def check_requirements(requirements='requirements.txt', exclude=()):
     else:  # list or tuple of packages
         requirements = [x for x in requirements if x not in exclude]
 
-    n = 0  # number of packages updates
+    missing = [] # missing packages
     for r in requirements:
+        if (working_set):
+            rq = pkg.Requirement(r)
+            if (not working_set.find(rq)):
+                missing.append(rq)
+            continue
         try:
             pkg.require(r)
         except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
-            n += 1
-    return n
+            missing.append(r)
+    return missing
 
-def install_virtual_environment(env_name: str = env_name):
+def install_virtual_environment(env_name: str=env_name, no_cache=True, no_deps=True):
     """
     Install the virtual environment.
     Keyword arguments:
     env_name    -- the name of the virtual environment
+    no_cache    -- disable caching of the packages
+    no_deps     -- disable installation of packages dependencies
     """
     import  os
     from    pathlib import Path
@@ -62,24 +70,40 @@ def install_virtual_environment(env_name: str = env_name):
                     sys.path.insert(0, path)
     # Installation of the requirements
     from utilities import execute_script, install, get_package_info
-    if (force_install_requirements or (os.path.isfile('requirements.txt') and check_requirements('requirements.txt') > 0)):
-        print('Installing the requirements')
+    missing = check_requirements(requirements='requirements.txt', no_deps=no_deps) if os.path.isfile('requirements.txt') else []
+    if (force_install_requirements or len(missing) > 0):
+        if (len(missing) > 0):
+            print('Missing requirements:')
+            for r in missing:
+                print(r)
+        print('Installing the requirements.')
         try:
-            execute_script(['-m', 'pip', 'install', '--no-deps', '--no-cache', '-r', 'requirements.txt'])
+            execute_script(['-m', 'pip', 'install', '--upgrade', 'pip'])
+            install_args = ['-m', 'pip', 'install', '--no-deps']
+            if (no_cache):
+                install_args.append('--no-cache')
+            if (no_deps):
+                install_args.append('--no-deps')
+            install_args.extend(['-r', 'requirements.txt'])
+            execute_script(install_args)
         except subprocess.CalledProcessError as exc:
             print ("Error!!!")
             print(exc)
             return exc.returncode
     # Install the object detection environment
-    if (not get_package_info('object-detection').version):
+    if (len(check_requirements(requirements=['object-detection'], no_deps=no_deps)) > 0):
         print('Installing the object detection API')
         try:
             from od_install import install_object_detection
-            install_object_detection()
+            install_object_detection(no_cache=no_cache, no_deps=no_deps)
         except subprocess.CalledProcessError as exc:
-            print ("Error!!!")
+            print("Error! Couldn't install object detection api.")
             print(exc)
             return exc.returncode
+        if (len(check_requirements(requirements=['object-detection'], no_deps=no_deps)) > 0):
+            print("Error! Couldn't install object detection api.")
+            return -1
+
     # Uninstall the dataclasses package installed erroneusly (incompatible) for python >=3.7 by tf-models-official
     try:
         import pkg_resources as pkg
