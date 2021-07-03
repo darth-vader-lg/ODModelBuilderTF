@@ -9,7 +9,7 @@
     <SearchPath>env\Scripts</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
-    <Name>ODModelBuilderTF</Name>
+    <Name>ODModelBuilderTF_Py</Name>
     <RootNamespace>ODModelBuilderTF</RootNamespace>
     <InterpreterId>MSBuild|env|$(MSBuildProjectFullPath)</InterpreterId>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
