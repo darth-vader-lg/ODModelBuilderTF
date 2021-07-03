@@ -350,3 +350,4 @@ env/
 /build/
 /ODModelBuilderTF/
 ODModelBuilderTF.spec
+/ODModelBuilderTF_Lib/py/env.zip

@@ -6,7 +6,7 @@
     <ProjectHome>
     </ProjectHome>
     <StartupFile>main.py</StartupFile>
-    <SearchPath>env\Scripts;env\src\tf2onnx\tf2onnx</SearchPath>
+    <SearchPath>env\Scripts</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>ODModelBuilderTF</Name>
@@ -22,6 +22,7 @@
     <Environment>CUDA_VISIBLE_DEVICES=-1
 </Environment>
     <IsWindowsApplication>False</IsWindowsApplication>
+    <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -95,6 +96,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="build.ps1" />
     <Content Include="build_exe.bat" />
     <Content Include="env_shell.bat" />
     <Content Include="install_virtual_environment.bat" />
@@ -109,9 +111,9 @@
     <Interpreter Include="env\">
       <Id>env</Id>
       <Version>3.7</Version>
-      <Description>env (Python 3.7 (64-bit))</Description>
-      <InterpreterPath>Scripts\python.exe</InterpreterPath>
-      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <Description>env</Description>
+      <InterpreterPath>python.exe</InterpreterPath>
+      <WindowsInterpreterPath>pythonw.exe</WindowsInterpreterPath>
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
       <Architecture>X64</Architecture>
     </Interpreter>
@@ -120,9 +122,29 @@
   <!-- Uncomment the CoreCompile target to enable the Build command in
        Visual Studio and specify your pre- and post-build commands in
        the BeforeBuild and AfterBuild targets below. -->
-  <!--<Target Name="CoreCompile" />-->
+  <PropertyGroup>
+    <BuildDependsOn>
+      BeforeBuild;
+      CoreBuild;
+      AfterBuild
+    </BuildDependsOn>
+  </PropertyGroup>
+  <ItemGroup>
+    <OutputFiles Include="$(OutputPath)\build-time.txt">
+      <Visible>false</Visible>
+    </OutputFiles>
+  </ItemGroup>
+  <Target Name="CoreCompile" />
+  <Target Name="Clean">
+    <Exec Condition="Exists('$(ProjectDir)env')" Command="PowerShell -NoProfile -ExecutionPolicy Bypass -Command &quot;rd -Recurse '$(ProjectDir)env'&quot;" />
+    <Delete Condition="Exists('$(OutputPath)\build-time.txt')" Files="$(OutputPath)\build-time.txt" />
+  </Target>
   <Target Name="BeforeBuild">
   </Target>
+  <Target Name="CoreBuild">
+    <Exec Command="PowerShell -NoProfile -ExecutionPolicy Bypass -Command &quot;%26 '$(ProjectDir)build.ps1'&quot;" />
+  </Target>
   <Target Name="AfterBuild">
+    <Exec Command="echo %25date%25 %25time%25 &gt;&quot;$(OutputPath)\build-time.txt&quot;" />
   </Target>
 </Project>

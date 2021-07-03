@@ -58,17 +58,23 @@ def install_virtual_environment(env_name: str=env_name, no_cache=True, no_deps=T
             except subprocess.CalledProcessError as exc:
                 return exc.returncode
         # Adjust the environment paths
-        if (os.path.dirname(sys.executable).lower() != os.path.join(env_name, script_dir).lower()):
-            sys.executable = os.path.join(env_name, script_dir, os.path.basename(sys.executable))
-            paths = [
-                os.path.abspath(os.path.join(env_name, 'Lib', 'site-packages')),
-                os.path.abspath(os.path.join(env_name, 'lib', 'python3.7', 'site-packages')),
-                os.path.abspath(os.path.join(env_name, 'Scripts')),
-                os.path.abspath(os.path.join(env_name, 'bin')),
-                ]
-            for path in paths:
-                if (not path in sys.path):
-                    sys.path.insert(0, path)
+        executable_dir = os.path.dirname(sys.executable).lower()
+        executable_name = os.path.basename(sys.executable).lower()
+        if (executable_dir != os.path.join(env_name, script_dir).lower() and executable_dir != env_name.lower()):
+            if (os.path.isfile(os.path.join(env_name, executable_name))):
+                sys.executable = os.path.join(env_name, executable_name)
+            else:
+                sys.executable = os.path.join(env_name, script_dir, executable_name)
+        paths = [
+            os.path.abspath(os.path.join(env_name, 'Lib', 'site-packages')),
+            os.path.abspath(os.path.join(env_name, 'lib', 'python3.7', 'site-packages')),
+            os.path.abspath(os.path.join(env_name, 'Scripts')),
+            os.path.abspath(os.path.join(env_name, 'bin')),
+            os.path.abspath(os.path.join(env_name)),
+            ]
+        for path in paths:
+            if (not path in sys.path):
+                sys.path.insert(0, path)
     # Installation of the requirements
     from utilities import execute_script, install, get_package_info
     missing = check_requirements(requirements='requirements.txt', no_deps=no_deps) if (os.path.isfile('requirements.txt') and not no_requirements) else []

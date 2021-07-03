@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
     <AssemblyName>ODModelBuilderTF</AssemblyName>
     <RootNamespace>ODModelBuilderTF</RootNamespace>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Description>Train, evaluation, export library for TensorFlow object detection</Description>
     <Copyright>Copyright 2021 darth-vader-lg</Copyright>
     <PackageLicenseExpression />
@@ -13,17 +14,18 @@
     <RepositoryUrl>https://github.com/darth-vader-lg/ODModelBuilderTF.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <NeutralLanguage />
+    <PackageId>ODModelBuilderTF</PackageId>
+    <Platforms>AnyCPU</Platforms>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
   </PropertyGroup>
 
   <ItemGroup>
     <None Remove="py\Activate.ps1" />
+    <None Remove="py\env.zip" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="..\requirements.txt" Link="py\requirements.txt" />
-  </ItemGroup>
-
-  <ItemGroup>
     <EmbeddedResource Include="..\base_parameters.py" Link="py\base_parameters.py" />
     <EmbeddedResource Include="..\build_exe.py" Link="py\build_exe.py" />
     <EmbeddedResource Include="..\default_cfg.py" Link="py\default_cfg.py" />
@@ -50,14 +52,35 @@
     <EmbeddedResource Include="..\train_tensorboard.py" Link="py\train_tensorboard.py" />
     <EmbeddedResource Include="..\utilities.py" Link="py\utilities.py" />
     <EmbeddedResource Include="py\Activate.ps1" />
-    <None Include="licence.txt">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
+    <EmbeddedResource Include="py\env.zip" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="pythonnet_netstandard_py37_win" Version="2.5.2" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="licence.txt">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+  </Target>
+
+  <PropertyGroup>
+    <ZipTimestamp>0</ZipTimestamp>
+    <ZipTimestamp Condition="Exists('$(ProjectDir)py\env.zip')">$([System.IO.File]::GetLastWriteTime('$(ProjectDir)py\env.zip').Ticks)</ZipTimestamp>
+    <BuildTimestamp>0</BuildTimestamp>
+    <BuildTimestamp Condition="Exists('$(ProjectDir)..\build-time.txt')">$([System.IO.File]::GetLastWriteTime('$(ProjectDir)..\build-time.txt').Ticks)</BuildTimestamp>
+  </PropertyGroup>
+
+  <Target Name="ZipOutputPath" AfterTargets="PreBuild" Condition="$(BuildTimestamp) > $(ZipTimestamp)">
+    <ZipDirectory SourceDirectory="$(ProjectDir)..\env" DestinationFile="$(ProjectDir)py\env.zip" Overwrite="true" />
+  </Target>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+  </Target>
 
 </Project>
