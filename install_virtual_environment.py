@@ -31,13 +31,14 @@ def check_requirements(requirements='requirements.txt', exclude=(), no_deps=True
             missing.append(r)
     return missing
 
-def install_virtual_environment(env_name: str=env_name, no_cache=True, no_deps=True):
+def install_virtual_environment(env_name: str=env_name, no_cache=True, no_deps=True, no_requirements=False, custom_tf_dir=None):
     """
     Install the virtual environment.
     Keyword arguments:
-    env_name    -- the name of the virtual environment
-    no_cache    -- disable caching of the packages
-    no_deps     -- disable installation of packages dependencies
+    env_name        -- the name of the virtual environment
+    no_cache        -- disable caching of the packages
+    no_deps         -- disable installation of packages dependencies
+    custom_tf_dir   -- directory containing special tensorflow builds
     """
     import  os
     from    pathlib import Path
@@ -53,7 +54,7 @@ def install_virtual_environment(env_name: str=env_name, no_cache=True, no_deps=T
             try:
                 from utilities import execute_script
                 execute_script(['-m', 'venv', env_name])
-                force_install_requirements = True
+                force_install_requirements = not no_requirements
             except subprocess.CalledProcessError as exc:
                 return exc.returncode
         # Adjust the environment paths
@@ -70,7 +71,8 @@ def install_virtual_environment(env_name: str=env_name, no_cache=True, no_deps=T
                     sys.path.insert(0, path)
     # Installation of the requirements
     from utilities import execute_script, install, get_package_info
-    missing = check_requirements(requirements='requirements.txt', no_deps=no_deps) if os.path.isfile('requirements.txt') else []
+    missing = check_requirements(requirements='requirements.txt', no_deps=no_deps) if (os.path.isfile('requirements.txt') and not no_requirements) else []
+    pip_upgraded = False
     if (force_install_requirements or len(missing) > 0):
         if (len(missing) > 0):
             print('Missing requirements:')
@@ -78,7 +80,9 @@ def install_virtual_environment(env_name: str=env_name, no_cache=True, no_deps=T
                 print(r)
         print('Installing the requirements.')
         try:
-            execute_script(['-m', 'pip', 'install', '--upgrade', 'pip'])
+            if (not pip_upgraded):
+                execute_script(['-m', 'pip', 'install', '--upgrade', 'pip'])
+                pip_upgraded = True
             install_args = ['-m', 'pip', 'install', '--no-deps']
             if (no_cache):
                 install_args.append('--no-cache')
@@ -91,16 +95,19 @@ def install_virtual_environment(env_name: str=env_name, no_cache=True, no_deps=T
             print(exc)
             return exc.returncode
     # Install the object detection environment
-    if (len(check_requirements(requirements=['object-detection'], no_deps=no_deps)) > 0):
+    if (len(check_requirements(requirements=['object-detection'], no_deps=True)) > 0):
         print('Installing the object detection API')
         try:
+            if (not pip_upgraded):
+                execute_script(['-m', 'pip', 'install', '--upgrade', 'pip'])
+                pip_upgraded = True
             from od_install import install_object_detection
-            install_object_detection(no_cache=no_cache, no_deps=no_deps)
+            install_object_detection(no_cache=no_cache, no_deps=no_deps, custom_tf_dir=custom_tf_dir)
         except subprocess.CalledProcessError as exc:
             print("Error! Couldn't install object detection api.")
             print(exc)
             return exc.returncode
-        if (len(check_requirements(requirements=['object-detection'], no_deps=no_deps)) > 0):
+        if (len(check_requirements(requirements=['object-detection'], no_deps=True)) > 0):
             print("Error! Couldn't install object detection api.")
             return -1
 
@@ -113,4 +120,19 @@ def install_virtual_environment(env_name: str=env_name, no_cache=True, no_deps=T
     return 0
 
 if __name__ == '__main__':
-    sys.exit(install_virtual_environment(env_name))
+    import  argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--custom-tf-dir',
+        dest='custom_tf_dir',
+        help='Directory containing wheels for special cuda customized tensorflow.'
+    )
+    parser.add_argument(
+        '--no-requirements',
+        dest='no_requirements',
+        action='store_true',
+        help='Bypass the requirements installation. To discover any dependency from scratch'
+    )
+    args = parser.parse_args()
+    from pathlib import Path
+    sys.exit(install_virtual_environment(env_name, no_cache=False, no_deps=not args.no_requirements, no_requirements=args.no_requirements, custom_tf_dir=args.custom_tf_dir))

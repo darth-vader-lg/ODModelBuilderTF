@@ -10,7 +10,7 @@ except: pass
 try:    from    utilities import *
 except: pass
 
-def install_object_detection(no_cache=True, no_deps=True):
+def install_object_detection(no_cache=True, no_deps=True, custom_tf_dir=None):
     """
     Install a well known environment.
     """
@@ -28,7 +28,24 @@ def install_object_detection(no_cache=True, no_deps=True):
         is_installed = get_package_info('tensorflow').version == tf_comparing_version
     except: pass
     if (not is_installed):
-        install(Cfg.tensorflow_version, install_extra_args)
+        tensorflow_package = Cfg.tensorflow_version
+        if (custom_tf_dir and Path(custom_tf_dir).is_dir()):
+            try:
+                # Read CUDA version
+                import subprocess
+                output = subprocess.check_output(['nvcc', '--version'], shell=True).decode()
+                if ('V10.1' in output):
+                    found = [f for f in Path(custom_tf_dir).glob('*.whl') if tf_comparing_version in Path(f).stem]
+                    if (len(found) == 1):
+                        tensorflow_package = str(found[0])
+                        print(f'Info: installing a custom tensorflow located at {tensorflow_package}')
+                    else:
+                        print(f'Warning: couldn\'t find the special version of tensorflow-{tf_comparing_version}')
+                        print('Installing the standard.')
+            except:
+                print(f'Warning: couldn\'t find cuda')
+                print('Installing the standard tensorflow.')
+        install(tensorflow_package, install_extra_args)
     else:
         print(f'TensorFlow {Cfg.tensorflow_version} is already installed')
     # Install pygit2
@@ -117,7 +134,7 @@ def install_object_detection(no_cache=True, no_deps=True):
         try:
             import pkg_resources as pkg
             pkg.require('dataclasses')
-            execute_script(['-m', 'pip', 'uninstall', '-y', 'dataclasses'])
+            uninstall('dataclasses')
         except Exception as e: pass
         # Return to the original directory
         os.chdir(currentDir)

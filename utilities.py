@@ -131,5 +131,11 @@ def is_terminal():
     """
     return get_type_of_script() == 'terminal'
 
+def uninstall(package: str):
+    """
+    Launch the uninstaller process
+    """
+    execute_script(['-m', 'pip', 'uninstall', '-y', package])
+
 if __name__ == '__main__':
     print('Utilities functions initialized')
