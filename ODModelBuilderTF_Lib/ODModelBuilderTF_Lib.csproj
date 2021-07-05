@@ -21,7 +21,7 @@
 
   <ItemGroup>
     <None Remove="py\Activate.ps1" />
-    <None Remove="py\env.zip" />
+    <None Remove="$(TargetDir)env.zip" />
   </ItemGroup>
 
   <ItemGroup>
@@ -51,7 +51,7 @@
     <EmbeddedResource Include="..\ODModelBuilderTF_Py\train_tensorboard.py" Link="py\train_tensorboard.py" />
     <EmbeddedResource Include="..\ODModelBuilderTF_Py\utilities.py" Link="py\utilities.py" />
     <EmbeddedResource Include="py\Activate.ps1" />
-    <EmbeddedResource Include="py\env.zip" />
+    <EmbeddedResource Include="$(TargetDir)env.zip" />
   </ItemGroup>
 
   <ItemGroup>
@@ -68,11 +68,11 @@
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
   </Target>
 
-  <Target Name="ZipOutputPath" AfterTargets="PreBuild">
+  <Target Name="ZipPyEnvironment" AfterTargets="PreBuild">
     <PropertyGroup>
       <EnvDir>$(ProjectDir)..\ODModelBuilderTF_Py\env</EnvDir>
       <BuildFile>$(EnvDir)\build-time.txt</BuildFile>
-      <ZipFile>$(ProjectDir)py\env.zip</ZipFile>
+      <ZipFile>$(TargetDir)env.zip</ZipFile>
       <BuildTimestamp>0</BuildTimestamp>
       <ZipTimestamp>0</ZipTimestamp>
       <BuildTimestamp Condition="Exists('$(BuildFile)')">$([System.IO.File]::GetLastWriteTime('$(BuildFile)').Ticks)</BuildTimestamp>
@@ -80,8 +80,49 @@
     </PropertyGroup>
     <ZipDirectory Condition="$(BuildTimestamp) > $(ZipTimestamp)" SourceDirectory="$(EnvDir)" DestinationFile="$(ZipFile)" Overwrite="true" />
   </Target>
-
+  
+  <Target Name="CleanPyEnvironment" AfterTargets="Clean">
+    <Exec Condition="Exists('$(TargetDir)py')" Command="PowerShell -NoProfile -ExecutionPolicy Bypass -Command &quot;rd -Recurse '$(TargetDir)py'&quot;" />
+    <Delete Condition="Exists('$(TargetDir)env.zip')" Files="$(TargetDir)env.zip" />
+  </Target>
+  
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
   </Target>
+
+  <!-- Uncomment to add extra files in the output folder -->
+  <!--
+  <PropertyGroup>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CustomBuildOutput</TargetsForTfmSpecificBuildOutput>
+  </PropertyGroup>
+  <Target Name="CustomBuildOutput">
+    <PropertyGroup>
+      <SourceFolder>extras</SourceFolder>
+    </PropertyGroup>
+    <ItemGroup>
+      <BuildOutputInPackage Include="$(SourceFolder)\**"/>
+    </ItemGroup>
+    <Message Text="$(SourceFolder) -> $(TargetDir)" Importance="high" />
+  </Target>
+  -->
+
+  <!-- Uncomment to add extra files in the output folder -->
+  <!--
+  <PropertyGroup>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);CustomContentInPackage</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+  <Target Name="CustomContentInPackage">
+    <PropertyGroup>
+      <NoDefaultExcludes>true</NoDefaultExcludes>
+      <SourceFolder>extras</SourceFolder>
+      <DestPackageFolder>extras</DestPackageFolder>
+    </PropertyGroup>
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(SourceFolder)\**">
+      <PackagePath>$(DestPackageFolder)</PackagePath>
+      </TfmSpecificPackageFile>
+    </ItemGroup>
+    <Message Text="$(SourceFolder) -> $(DestPackageFolder)" Importance="high" />
+  </Target>
+  -->
 
 </Project>
