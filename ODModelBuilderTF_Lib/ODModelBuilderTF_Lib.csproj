@@ -19,37 +19,43 @@
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <PythonProject>$(ProjectDir)..\ODModelBuilderTF_Py\</PythonProject>
+    <PythonProjectEnv>$(PythonProject)env\</PythonProjectEnv>
+    <PythonProjectOut>$(PythonProjectEnv)build-time.txt</PythonProjectOut>
+  </PropertyGroup>
+  
   <ItemGroup>
     <None Remove="py\Activate.ps1" />
     <None Remove="$(TargetDir)env.zip" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\requirements.txt" Link="py\requirements.txt" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\base_parameters.py" Link="py\base_parameters.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\default_cfg.py" Link="py\default_cfg.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\eval_environment.py" Link="py\eval_environment.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\eval_main.py" Link="py\eval_main.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\eval_parameters.py" Link="py\eval_parameters.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\export_environment.py" Link="py\export_environment.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\export_frozen_graph.py" Link="py\export_frozen_graph.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\export_main.py" Link="py\export_main.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\export_model_config.py" Link="py\export_model_config.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\export_onnx.py" Link="py\export_onnx.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\export_parameters.py" Link="py\export_parameters.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\install_virtual_environment.py" Link="py\install_virtual_environment.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\main.py" Link="py\main.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\model_types.py" Link="py\model_types.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\mount_google_drive.py" Link="py\mount_google_drive.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\od_install.py" Link="py\od_install.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\pretrained_model.py" Link="py\pretrained_model.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\tf_records.py" Link="py\tf_records.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\train_environment.py" Link="py\train_environment.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\train_main.py" Link="py\train_main.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\train_parameters.py" Link="py\train_parameters.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\train_pipeline.py" Link="py\train_pipeline.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\train_tensorboard.py" Link="py\train_tensorboard.py" />
-    <EmbeddedResource Include="..\ODModelBuilderTF_Py\utilities.py" Link="py\utilities.py" />
+    <EmbeddedResource Include="$(PythonProject)requirements.txt" Link="py\requirements.txt" />
+    <EmbeddedResource Include="$(PythonProject)base_parameters.py" Link="py\base_parameters.py" />
+    <EmbeddedResource Include="$(PythonProject)default_cfg.py" Link="py\default_cfg.py" />
+    <EmbeddedResource Include="$(PythonProject)eval_environment.py" Link="py\eval_environment.py" />
+    <EmbeddedResource Include="$(PythonProject)eval_main.py" Link="py\eval_main.py" />
+    <EmbeddedResource Include="$(PythonProject)eval_parameters.py" Link="py\eval_parameters.py" />
+    <EmbeddedResource Include="$(PythonProject)export_environment.py" Link="py\export_environment.py" />
+    <EmbeddedResource Include="$(PythonProject)export_frozen_graph.py" Link="py\export_frozen_graph.py" />
+    <EmbeddedResource Include="$(PythonProject)export_main.py" Link="py\export_main.py" />
+    <EmbeddedResource Include="$(PythonProject)export_model_config.py" Link="py\export_model_config.py" />
+    <EmbeddedResource Include="$(PythonProject)export_onnx.py" Link="py\export_onnx.py" />
+    <EmbeddedResource Include="$(PythonProject)export_parameters.py" Link="py\export_parameters.py" />
+    <EmbeddedResource Include="$(PythonProject)install_virtual_environment.py" Link="py\install_virtual_environment.py" />
+    <EmbeddedResource Include="$(PythonProject)main.py" Link="py\main.py" />
+    <EmbeddedResource Include="$(PythonProject)model_types.py" Link="py\model_types.py" />
+    <EmbeddedResource Include="$(PythonProject)mount_google_drive.py" Link="py\mount_google_drive.py" />
+    <EmbeddedResource Include="$(PythonProject)od_install.py" Link="py\od_install.py" />
+    <EmbeddedResource Include="$(PythonProject)pretrained_model.py" Link="py\pretrained_model.py" />
+    <EmbeddedResource Include="$(PythonProject)tf_records.py" Link="py\tf_records.py" />
+    <EmbeddedResource Include="$(PythonProject)train_environment.py" Link="py\train_environment.py" />
+    <EmbeddedResource Include="$(PythonProject)train_main.py" Link="py\train_main.py" />
+    <EmbeddedResource Include="$(PythonProject)train_parameters.py" Link="py\train_parameters.py" />
+    <EmbeddedResource Include="$(PythonProject)train_pipeline.py" Link="py\train_pipeline.py" />
+    <EmbeddedResource Include="$(PythonProject)train_tensorboard.py" Link="py\train_tensorboard.py" />
+    <EmbeddedResource Include="$(PythonProject)utilities.py" Link="py\utilities.py" />
     <EmbeddedResource Include="py\Activate.ps1" />
     <EmbeddedResource Include="$(TargetDir)env.zip" />
   </ItemGroup>
@@ -70,15 +76,13 @@
 
   <Target Name="ZipPyEnvironment" AfterTargets="PreBuild">
     <PropertyGroup>
-      <EnvDir>$(ProjectDir)..\ODModelBuilderTF_Py\env</EnvDir>
-      <BuildFile>$(EnvDir)\build-time.txt</BuildFile>
       <ZipFile>$(TargetDir)env.zip</ZipFile>
       <BuildTimestamp>0</BuildTimestamp>
       <ZipTimestamp>0</ZipTimestamp>
-      <BuildTimestamp Condition="Exists('$(BuildFile)')">$([System.IO.File]::GetLastWriteTime('$(BuildFile)').Ticks)</BuildTimestamp>
+      <BuildTimestamp Condition="Exists('$(PythonProjectOut)')">$([System.IO.File]::GetLastWriteTime('$(PythonProjectOut)').Ticks)</BuildTimestamp>
       <ZipTimestamp Condition="Exists('$(ZipFile)')">$([System.IO.File]::GetLastWriteTime('$(ZipFile)').Ticks)</ZipTimestamp>
     </PropertyGroup>
-    <ZipDirectory Condition="$(BuildTimestamp) > $(ZipTimestamp)" SourceDirectory="$(EnvDir)" DestinationFile="$(ZipFile)" Overwrite="true" />
+    <ZipDirectory Condition="$(BuildTimestamp) > $(ZipTimestamp)" SourceDirectory="$(PythonProjectEnv)" DestinationFile="$(ZipFile)" Overwrite="true" />
   </Target>
   
   <Target Name="CleanPyEnvironment" AfterTargets="Clean">
