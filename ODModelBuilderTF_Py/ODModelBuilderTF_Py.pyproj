@@ -19,8 +19,7 @@
     <InterpreterArguments>
     </InterpreterArguments>
     <CommandLineArguments>--output_directory exported-model-ssd-320x320 --frozen_graph frozen_graph.pb  --onnx saved_model.onnx --trained_checkpoint_dir=""</CommandLineArguments>
-    <Environment>CUDA_VISIBLE_DEVICES=-1
-</Environment>
+    <Environment>CUDA_VISIBLE_DEVICES=-1</Environment>
     <IsWindowsApplication>False</IsWindowsApplication>
     <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
   </PropertyGroup>
@@ -34,9 +33,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="base_parameters.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="build_exe.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="default_cfg.py">
@@ -97,10 +93,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="build.ps1" />
-    <Content Include="build_exe.bat" />
     <Content Include="env_shell.bat" />
-    <Content Include="install_virtual_environment.bat" />
-    <Content Include="ODModelBuilderTF.spec" />
     <Content Include="py_to_ODModelBuilderTF_ipynb.bat" />
     <Content Include="requirements.txt" />
     <Content Include="set_sync_jupyter_notebook_env.bat" />
@@ -130,14 +123,14 @@
     </BuildDependsOn>
   </PropertyGroup>
   <ItemGroup>
-    <OutputFiles Include="$(OutputPath)\build-time.txt">
+    <OutputFiles Include="$(OutputPath)env\build-time.txt">
       <Visible>false</Visible>
     </OutputFiles>
   </ItemGroup>
   <Target Name="CoreCompile" />
   <Target Name="Clean">
     <Exec Condition="Exists('$(ProjectDir)env')" Command="PowerShell -NoProfile -ExecutionPolicy Bypass -Command &quot;rd -Recurse '$(ProjectDir)env'&quot;" />
-    <Delete Condition="Exists('$(OutputPath)\build-time.txt')" Files="$(OutputPath)\build-time.txt" />
+    <Delete Condition="Exists('$(OutputPath)env\build-time.txt')" Files="$(OutputPath)env\build-time.txt" />
   </Target>
   <Target Name="BeforeBuild">
   </Target>
@@ -145,6 +138,6 @@
     <Exec Command="PowerShell -NoProfile -ExecutionPolicy Bypass -Command &quot;%26 '$(ProjectDir)build.ps1'&quot;" />
   </Target>
   <Target Name="AfterBuild">
-    <Exec Command="echo %25date%25 %25time%25 &gt;&quot;$(OutputPath)\build-time.txt&quot;" />
+    <Exec Command="echo %25date%25 %25time%25 &gt;&quot;$(OutputPath)env\build-time.txt&quot;" />
   </Target>
 </Project>

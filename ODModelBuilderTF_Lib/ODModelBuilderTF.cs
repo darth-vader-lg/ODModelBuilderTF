@@ -132,11 +132,24 @@ namespace ODModelBuilderTF
             var zipEnv = GetPythonResource("env.zip");
             if (zipEnv != null) {
                var archive = new ZipArchive(zipEnv);
-               archive.ExtractToDirectory(virtualEnvPath, true);
+               var extract = !Directory.Exists(virtualEnvPath);
+               if (!extract) {
+                  var buildTimeFile = Path.Combine(virtualEnvPath, "build-time.txt");
+                  extract |= !File.Exists(buildTimeFile);
+                  if (!extract) {
+                     var arcBuildTimeFile = archive.GetEntry("build-time.txt");
+                     extract |= arcBuildTimeFile.LastWriteTime > File.GetLastWriteTime(buildTimeFile);
+                  }
+               }
+               if (extract) {
+                  Trace.WriteLine("Preparing the environment");
+                  archive.ExtractToDirectory(virtualEnvPath, true);
+               }
             }
             else {
                // Check for the existence of the environment directory
                if (!Directory.Exists(virtualEnvPath)) {
+                  Trace.WriteLine("Preparing the environment");
                   if (fullPython) {
                      // Package for setup
                      var pythonNupkg = Path.Combine(virtualEnvPath, "python.zip");
