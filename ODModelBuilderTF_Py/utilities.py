@@ -61,7 +61,8 @@ def get_package_info(package_name: str):
     class Result(object):
         def __init__(self, *args, **kwargs):
             try:
-                import pkg_resources
+                import pkg_resources, importlib
+                importlib.reload(pkg_resources)
                 dist = pkg_resources.get_distribution(package_name)
                 self.name = dist.key
                 self.version = dist.version

@@ -40,6 +40,8 @@ def init_train_environment(prm: TrainParameters):
             os.symlink(gdrive_dir, '/content/trained-model', True)
         print(f"Google drive's {prm.model_dir} is linked to /content/trained-model")
         prm.model_dir = '/content/trained-model'
+        if (not prm.annotations_dir):
+            prm.annotations_dir = "annotations"
         if (not os.path.exists(prm.annotations_dir)):
             if (not prm.annotations_dir.startswith('/')):
                 prm.annotations_dir = os.path.join('/content', prm.annotations_dir)
@@ -57,6 +59,8 @@ def init_train_environment(prm: TrainParameters):
             print('Creating the output directory')
             os.mkdir(prm.model_dir)
         print(f'The trained model will be in {str(Path(prm.model_dir).resolve())}')
+        if (not prm.annotations_dir):
+            prm.annotations_dir = "annotations"
         if (not os.path.exists(prm.annotations_dir)):
             os.mkdir(prm.annotations_dir)
         print(f'The annotations files will be in {str(Path(prm.annotations_dir).resolve())}')

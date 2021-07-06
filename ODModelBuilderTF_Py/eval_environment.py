@@ -29,7 +29,7 @@ def init_eval_environment(prm: EvalParameters):
         print(f'The evaluated model is in {str(Path(prm.checkpoint_dir).resolve())}')
     if (not prm.model_dir):
         prm.model_dir = prm.checkpoint_dir
-    if (not prm.pipeline_config_path and os.path.isdir(prm.model_dir) and os.path.exists(os.path.join(prm.model_dir, "pipeline.config"))):
+    if (not prm.pipeline_config_path and os.path.exists(prm.model_dir) and os.path.exists(os.path.join(prm.model_dir, "pipeline.config"))):
         prm.pipeline_config_path = os.path.join(prm.model_dir, "pipeline.config")
     if (not prm.pipeline_config_path):
         raise Exception("Error!!! Undefined pipeline configuration file")

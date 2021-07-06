@@ -6,27 +6,28 @@ env_name = 'env'
 
 def check_requirements(requirements='requirements.txt', exclude=(), no_deps=True):
     # Check installed dependencies meet requirements (pass *.txt file or list of packages)
-    import pkg_resources as pkg
+    import pkg_resources, importlib
+    importlib.reload(pkg_resources)
     from pathlib import Path
-    working_set = pkg.WorkingSet() if no_deps else None
+    working_set = pkg_resources.WorkingSet() if no_deps else None
     if isinstance(requirements, (str, Path)):  # requirements.txt file
         file = Path(requirements)
         if not file.exists():
             print(f"{file.resolve()} not found, check failed.")
             return
-        requirements = [f'{x.name}{x.specifier}' for x in pkg.parse_requirements(file.open()) if x.name not in exclude]
+        requirements = [f'{x.name}{x.specifier}' for x in pkg_resources.parse_requirements(file.open()) if x.name not in exclude]
     else:  # list or tuple of packages
         requirements = [x for x in requirements if x not in exclude]
 
     missing = [] # missing packages
     for r in requirements:
-        if (working_set):
-            rq = pkg.Requirement(r)
-            if (not working_set.find(rq)):
-                missing.append(rq)
-            continue
         try:
-            pkg.require(r)
+            if (working_set):
+                rq = pkg_resources.Requirement(r)
+                if (not working_set.find(rq)):
+                    missing.append(rq)
+            else:
+                pkg_resources.require(r)
         except Exception as e:  # DistributionNotFound or VersionConflict if requirements not met
             missing.append(r)
     return missing
@@ -119,8 +120,9 @@ def install_virtual_environment(env_name: str=env_name, no_cache=True, no_deps=T
 
     # Uninstall the dataclasses package installed erroneusly (incompatible) for python >=3.7 by tf-models-official
     try:
-        import pkg_resources as pkg
-        pkg.require('dataclasses')
+        import pkg_resources, importlib
+        importlib.reload(pkg_resources)
+        pkg_resources.require('dataclasses')
         execute_script(['-m', 'pip', 'uninstall', '-y', 'dataclasses'])
     except Exception as e: pass
     return 0

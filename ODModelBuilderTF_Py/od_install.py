@@ -132,8 +132,9 @@ def install_object_detection(no_cache=True, no_deps=True, custom_tf_dir=None):
         install('.', install_extra_args)
         # Uninstall the dataclasses package installed erroneusly (incompatible) for python >=3.7 by tf-models-official
         try:
-            import pkg_resources as pkg
-            pkg.require('dataclasses')
+            import pkg_resources, importlib
+            importlib.reload(pkg_resources)
+            pkg_resources.require('dataclasses')
             uninstall('dataclasses')
         except Exception as e: pass
         # Return to the original directory
