@@ -566,10 +566,30 @@ namespace ODModelBuilderTF
       /// <summary>
       /// Model train
       /// </summary>
-      public static void Train()
+      /// <param name="modelType">Type of the model</param>
+      /// <param name="modelDir">The train data directory</param>
+      /// <param name="trainImagesDir">The train images and annotations dir</param>
+      /// <param name="evalImagesDir">The evaluation images and annotations dir</param>
+      /// <param name="batchSize">The batch size of the train</param>
+      /// <param name="numTrainSteps">Maximum number of train steps. Read from the pipeline config file if < 0</param>
+      /// <param name="tensorboardPort">The tensorboard listening port.</param>
+      /// <param name="annotationsDir">The tensorflow records directory. A temporary directory will be created if null.</param>
+      public static void Train(ModelTypes modelType, string modelDir, string trainImagesDir, string evalImagesDir, int batchSize, int numTrainSteps = -1, int tensorboardPort = 6006, string annotationsDir = null)
       {
+         // Check arguments
+         if (string.IsNullOrWhiteSpace(trainImagesDir))
+            throw new ArgumentNullException(nameof(trainImagesDir), "Unspecified train images directory");
+         if (!Directory.Exists(trainImagesDir))
+            throw new ArgumentNullException(nameof(trainImagesDir), "The train images directory doesn't exist");
+         if (string.IsNullOrWhiteSpace(evalImagesDir))
+            throw new ArgumentNullException(nameof(trainImagesDir), "Unspecified evaluation images directory");
+         if (!Directory.Exists(evalImagesDir))
+            throw new ArgumentNullException(nameof(trainImagesDir), "The train evaluation directory doesn't exist");
+         if (string.IsNullOrWhiteSpace(modelDir))
+            throw new ArgumentNullException(nameof(modelDir), "Unspecified model train directory");
          // Directory for the tf records
-         var annotationsDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+         var delAnnotationDir = string.IsNullOrWhiteSpace(annotationsDir);
+         annotationsDir = !string.IsNullOrWhiteSpace(annotationsDir) ? annotationsDir : Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
          try {
             // Acquire the GIL
             using var gil = Py.GIL();
@@ -581,14 +601,14 @@ namespace ODModelBuilderTF
                new PyObject[]
                {
                   Assembly.GetEntryAssembly().Location.ToPython(),
-                  "--model_type".ToPython(), "SSD MobileNet v2 320x320".ToPython(),
-                  "--train_images_dir".ToPython(), "D:\\ObjectDetection\\caz\\TensorFlow\\images\\train".ToPython(),
-                  "--eval_images_dir".ToPython(), "D:\\ObjectDetection\\caz\\TensorFlow\\images\\eval".ToPython(),
-                  "--model_dir".ToPython(), "D:\\ObjectDetection\\caz\\TensorFlow\\trained-model".ToPython(),
+                  "--model_type".ToPython(), modelType.ToText().ToPython(),
+                  "--train_images_dir".ToPython(), trainImagesDir.ToPython(),
+                  "--eval_images_dir".ToPython(), evalImagesDir.ToPython(),
+                  "--model_dir".ToPython(), modelDir.ToPython(),
                   "--annotations_dir".ToPython(), annotationsDir.ToPython(),
-                  "--tensorboard_port".ToPython(), "6006".ToPython(),
-                  "--num_train_steps".ToPython(), "50000".ToPython(),
-                  "--batch_size".ToPython(), "16".ToPython()
+                  "--tensorboard_port".ToPython(), tensorboardPort.ToString().ToPython(),
+                  "--num_train_steps".ToPython(), numTrainSteps.ToString().ToPython(),
+                  "--batch_size".ToPython(), batchSize.ToString().ToPython()
                });
             // Import the main of the training
             dynamic train_main = pyTrain.Import("train_main");
@@ -623,7 +643,7 @@ namespace ODModelBuilderTF
          finally {
             // Delete the annotations directory
             try {
-               if (Directory.Exists(annotationsDir))
+               if (delAnnotationDir && Directory.Exists(annotationsDir))
                   Directory.Delete(annotationsDir, true);
             }
             catch (Exception exc) {
