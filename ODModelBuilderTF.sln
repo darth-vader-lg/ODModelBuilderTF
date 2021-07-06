@@ -3,7 +3,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31129.286
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ODModelBuilderTF", "ODModelBuilderTF.pyproj", "{BF17799B-E8E4-4441-9F34-25B050033535}"
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ODModelBuilderTF_Py", "ODModelBuilderTF_Py\ODModelBuilderTF_Py.pyproj", "{BF17799B-E8E4-4441-9F34-25B050033535}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ODModelBuilderTF_Lib", "ODModelBuilderTF_Lib\ODModelBuilderTF_Lib.csproj", "{0E2CA1B0-E8E5-4083-8B08-038DC900D96E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BF17799B-E8E4-4441-9F34-25B050033535} = {BF17799B-E8E4-4441-9F34-25B050033535}
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ODModelBuilderTF_Con", "ODModelBuilderTF_Con\ODModelBuilderTF_Con.csproj", "{3B68E608-3935-46A8-A3BB-A85AC54E1F8C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -12,7 +19,17 @@ Global
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{BF17799B-E8E4-4441-9F34-25B050033535}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF17799B-E8E4-4441-9F34-25B050033535}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BF17799B-E8E4-4441-9F34-25B050033535}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF17799B-E8E4-4441-9F34-25B050033535}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0E2CA1B0-E8E5-4083-8B08-038DC900D96E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E2CA1B0-E8E5-4083-8B08-038DC900D96E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E2CA1B0-E8E5-4083-8B08-038DC900D96E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E2CA1B0-E8E5-4083-8B08-038DC900D96E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B68E608-3935-46A8-A3BB-A85AC54E1F8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B68E608-3935-46A8-A3BB-A85AC54E1F8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B68E608-3935-46A8-A3BB-A85AC54E1F8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B68E608-3935-46A8-A3BB-A85AC54E1F8C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

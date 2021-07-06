@@ -14,6 +14,8 @@ flags.DEFINE_string ('train_images_dir', None, 'Path to the directory '
                      'containing the images for train and their labeling xml.')
 flags.DEFINE_string ('eval_images_dir', None, 'Path to the directory '
                      'containing the images for evaluate and their labeling xml.')
+flags.DEFINE_string ('annotations_dir', None, 'Path to the directory '
+                     'containing the computed tensorflow records.')
 flags.DEFINE_integer('batch_size', 0, 'The size of batch. If < 1 it uses the '
                      'value contained in the pipeline configuration file.')
 flags.DEFINE_integer('tensorboard_port', 8080, 'The port of the tensorboard server')
@@ -38,6 +40,8 @@ def train_main(unused_argv):
     # Import the train main function
     from object_detection import model_main_tf2
     train_parameters.update_flags()
+    if (train_parameters.num_train_steps < 0):
+        setattr(flags.FLAGS, 'num_train_steps', None)
     # Start the tensorboard
     from train_tensorboard import start_tensorboard
     start_tensorboard(train_parameters)
