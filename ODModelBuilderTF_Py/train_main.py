@@ -40,6 +40,8 @@ def train_main(unused_argv):
     # Import the train main function
     from object_detection import model_main_tf2
     train_parameters.update_flags()
+    if (train_parameters.num_train_steps < 0):
+        setattr(flags.FLAGS, 'num_train_steps', None)
     # Start the tensorboard
     from train_tensorboard import start_tensorboard
     start_tensorboard(train_parameters)

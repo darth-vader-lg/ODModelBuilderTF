@@ -14,7 +14,7 @@ def main(unused_argv):
         Cfg.exported_model_dir = None
         Cfg.exported_onnx_path = None
         Cfg.exported_frozen_graph_path = None
-        Cfg.max_train_steps = 0
+        Cfg.num_train_steps = 0
     try:
         if (not is_executable()):
             print('=' * 80)

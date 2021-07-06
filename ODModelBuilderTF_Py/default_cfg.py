@@ -30,7 +30,7 @@ class Cfg(object):
     #@markdown ---
     #@markdown ## Maximum training steps:
     #@markdown The maximun number of train steps. If < 0 it will be limited by the base model configuration.
-    max_train_steps = -1 #@param {type:"integer"}
+    num_train_steps = -1 #@param {type:"integer"}
     #@markdown ---
     #@markdown ## Batch size:
     #@markdown The size of the batch. If < 1 the value contained in the model pipeline configuration will be used
