@@ -675,19 +675,17 @@ namespace ODModelBuilderTF
                // Create annotation dir and start the train
                if (!Directory.Exists(annotationsDir))
                   Directory.CreateDirectory(annotationsDir);
-               var step_callback = new Action<dynamic>(kwargs =>
+               var train = new Action<dynamic>(unused_argv =>
                {
-                  using (Py.GIL()) {
-                     Console.WriteLine($"Step from C#: {kwargs["global_step"]}");
-                  }
+                  var stepCallback = new Action<dynamic>(args =>
+                  {
+                     using (Py.GIL())
+                        Console.WriteLine($"Step {args.global_step}, Per-step time {args.per_step_time} secs, Loss {args.loss}");
+                  });
+                  using (Py.GIL())
+                     train_main.train_main(unused_argv, stepCallback);
                });
-               var main_with_callback = new Action<dynamic>(unused_argv =>
-               {
-                  using (Py.GIL()) {
-                     train_main.train_main(unused_argv, step_callback);
-                  }
-               });
-               tf.compat.v1.app.run(main_with_callback);
+               tf.compat.v1.app.run(train);
             }
             catch (PythonException exc) {
                // Response to the exceptions
