@@ -343,11 +343,7 @@ healthchecksdb
 env/
 
 # Workspace directories
-/images*/
-/annotations*/
-/trained-model*/
-/exported-model*/
-/build/
-/ODModelBuilderTF/
-ODModelBuilderTF.spec
-/ODModelBuilderTF_Lib/py/env.zip
+ODModelBuilderTF_Py/images*/
+ODModelBuilderTF_Py/annotations*/
+ODModelBuilderTF_Py/trained-model*/
+ODModelBuilderTF_Py/exported-model*/

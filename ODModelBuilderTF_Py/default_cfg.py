@@ -38,7 +38,9 @@ class Cfg(object):
     #@markdown ---
     # TensorFlow version
     tensorflow_version = 'tensorflow==2.4.1' # or for example tf-nightly==2.5.0.dev20210315
-    # SHA1 for the checkout of the TensorFlow object detection api
-    od_api_git_sha1 = 'e356598a5b79a768942168b10d9c1acaa923bdb4'
-    # SHA1 for the checkout of the onnx convertion tool
-    tf2onnx_git_sha1 = '596f23741b1b5476e720089ed0dfd5dbcc5a44d0'
+    # TensorFlow object detection api location and reference
+    od_api_git_repo = 'C:\\Users\\DartFener\\source\\models' #@@@'https://github.com/darth-vader-lg/models.git'
+    od_api_git_ref = 'object-detection/wip-r2.4.0' #@@@
+    # ONNX conversion tool location and reference
+    tf2onnx_git_repo = 'https://github.com/onnx/tensorflow-onnx.git'
+    tf2onnx_git_ref = '596f23741b1b5476e720089ed0dfd5dbcc5a44d0'

@@ -3,8 +3,10 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using OD = ODModelBuilderTF.ODModelBuilderTF;
+
 namespace ODModelBuilderTF_Con
 {
    class Program
@@ -18,8 +20,13 @@ namespace ODModelBuilderTF_Con
          var modelDir = @"D:\ObjectDetection\caz\TensorFlow\trained-model";
          var trainImagesDir = @"D:\ObjectDetection\caz\TensorFlow\images\train";
          var evalImagesDir = @"D:\ObjectDetection\caz\TensorFlow\images\eval";
+         var exitToken = new CancellationTokenSource();
+         Console.CancelKeyPress += (sender, e) => exitToken.Cancel();
          var taskTrain = Task.Run(() => OD.Train(modelType, modelDir, trainImagesDir, evalImagesDir, 4, 50000));
-         await taskTrain;
+         await Task.Delay(30000);
+         var taskEval = Task.CompletedTask;//@@@ Task.Run(() => OD.Evaluate(modelDir));
+         var taskExit = Task.Delay(-1, exitToken.Token).ContinueWith(t => { });
+         await Task.WhenAny(Task.WhenAll(taskTrain, taskEval), taskExit);
       }
    }
 }

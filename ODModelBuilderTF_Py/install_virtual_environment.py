@@ -89,6 +89,7 @@ def install_virtual_environment(env_name: str=env_name, no_cache=True, no_deps=T
         try:
             if (not pip_upgraded):
                 execute_script(['-m', 'pip', 'install', '--upgrade', 'pip'])
+                execute_script(['-m', 'pip', 'install', '--upgrade', 'setuptools'])
                 pip_upgraded = True
             install_args = ['-m', 'pip', 'install', '--no-deps']
             if (no_cache):
@@ -107,6 +108,7 @@ def install_virtual_environment(env_name: str=env_name, no_cache=True, no_deps=T
         try:
             if (not pip_upgraded):
                 execute_script(['-m', 'pip', 'install', '--upgrade', 'pip'])
+                execute_script(['-m', 'pip', 'install', '--upgrade', 'setuptools'])
                 pip_upgraded = True
             from od_install import install_object_detection
             install_object_detection(no_cache=no_cache, no_deps=no_deps, custom_tf_dir=custom_tf_dir)

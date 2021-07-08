@@ -20,7 +20,7 @@ flags.DEFINE_integer('batch_size', 0, 'The size of batch. If < 1 it uses the '
                      'value contained in the pipeline configuration file.')
 flags.DEFINE_integer('tensorboard_port', 8080, 'The port of the tensorboard server')
 
-def train_main(unused_argv):
+def train_main(unused_argv, step_callback=None, checkpoint_callback=None):
     # Init the train environment
     from pretrained_model import download_pretrained_model
     from tf_records import create_tf_records
@@ -45,8 +45,15 @@ def train_main(unused_argv):
     # Start the tensorboard
     from train_tensorboard import start_tensorboard
     start_tensorboard(train_parameters)
+    # Define the callback managers
+    def _step_callback(**kwargs): #@@@ Todo: Don't call this callbacks if the parameters of the function are None
+        if (step_callback):
+            step_callback(kwargs)
+    def _checkpoint_callback(**kwargs):
+        if (checkpoint_callback):
+            checkpoint_callback(kwargs)
     # Execute the train
-    model_main_tf2.main(unused_argv)
+    model_main_tf2.main(unused_argv, _step_callback, _checkpoint_callback)
 
 if __name__ == '__main__':
     if (not is_executable()):

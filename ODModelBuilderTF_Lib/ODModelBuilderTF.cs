@@ -89,6 +89,63 @@ namespace ODModelBuilderTF
          return 0;
       }
       /// <summary>
+      /// Model evaluation
+      /// </summary>
+      /// <param name="checkpointDir">The checkpoint directory</param>
+      public static void Evaluate(string checkpointDir)
+      {
+         // Check arguments
+         if (string.IsNullOrWhiteSpace(checkpointDir))
+            throw new ArgumentNullException(nameof(checkpointDir), "Unspecified checkpoint directory");
+         if (!Directory.Exists(checkpointDir))
+            throw new ArgumentNullException(nameof(checkpointDir), "The checkpoint directory doesn't exist");
+         try {
+            // Acquire the GIL
+            using var gil = Py.GIL();
+            // Create a new scope
+            var pyEval = ((PyScope)py).NewScope();
+            // Prepare the arguments
+            dynamic sys = pyEval.Import("sys");
+            sys.argv = new PyList(
+               new PyObject[]
+               {
+                  Assembly.GetEntryAssembly().Location.ToPython(),
+                  "--checkpoint_dir".ToPython(), checkpointDir.ToPython()
+               });
+            // Import the main of the training
+            dynamic eval_main = pyEval.Import("eval_main");
+            // Import the module here just for having the flags defined
+            eval_main.allow_flags_override();
+            try {
+               pyEval.Import("object_detection.model_main_tf2");
+            }
+            catch (Exception) {
+            }
+            // Import the TensorFlow
+            dynamic tf = pyEval.Import("tensorflow");
+            try {
+               tf.compat.v1.app.run(eval_main.eval_main);
+            }
+            catch (PythonException exc) {
+               // Response to the exceptions
+               var action = exc.PyType switch
+               {
+                  var pexc when pexc == Exceptions.SystemExit => new Action(() => { }),
+                  var pexc when pexc == Exceptions.KeyboardInterrupt => new Action(() =>
+                  {
+                     Trace.WriteLine("Interrupted by user");
+                  }),
+                  _ => new Action(() => { throw exc; })
+               };
+               action();
+            }
+         }
+         catch (Exception exc) {
+            Trace.WriteLine(exc.ToString().Replace("\\n", Environment.NewLine));
+            throw;
+         }
+      }
+      /// <summary>
       /// Return a python embedded resource
       /// </summary>
       /// <param name="name">Name of the python script</param>
@@ -293,14 +350,6 @@ namespace ODModelBuilderTF
             ts = PythonEngine.BeginAllowThreads();
          }
          InitPythonEngine();
-         // Package resources module and workingset
-         dynamic pkg;
-         dynamic workingSet;
-         using (Py.GIL()) {
-            py.Import("pkg_resources");
-            pkg = py.pkg_resources;
-            workingSet = pkg.WorkingSet();
-         }
          // Define the package check function
          static List<string> GetMissingRequirements(IEnumerable<string> requirements)
          {
@@ -308,8 +357,9 @@ namespace ODModelBuilderTF
             var result = new List<string>();
             using (Py.GIL()) {
                // Package resources module and workingset
-               py.Import("pkg_resources");
-               var pkg = py.pkg_resources;
+               var pkg = py.Import("pkg_resources");
+               py.Import("importlib");
+               py.importlib.reload(pkg);
                var ws = pkg.WorkingSet();
                // Check all requirements
                foreach (var req in requirements) {
@@ -388,6 +438,7 @@ namespace ODModelBuilderTF
                   using (Py.GIL()) {
                      py.Import(PythonEngine.ModuleFromString("utilities", GetPythonScript("utilities.py")));
                      py.utilities.execute_script(new[] { "-m", "pip", "install", "--upgrade", "pip" });
+                     py.utilities.execute_script(new[] { "-m", "pip", "install", "--upgrade", "setuptools" });
                      py.utilities.execute_script(new[] { "-m", "pip", "install", "--no-cache", "--no-deps", "-r", tempRequirements });
                   }
                   // Check for successfully installation
@@ -451,6 +502,7 @@ namespace ODModelBuilderTF
             "eval_parameters",
             "export_parameters",
             "train_parameters",
+            "eval_environment",
             "eval_main",
             "export_environment",
             "export_frozen_graph",
@@ -584,7 +636,7 @@ namespace ODModelBuilderTF
          if (string.IsNullOrWhiteSpace(evalImagesDir))
             throw new ArgumentNullException(nameof(trainImagesDir), "Unspecified evaluation images directory");
          if (!Directory.Exists(evalImagesDir))
-            throw new ArgumentNullException(nameof(trainImagesDir), "The train evaluation directory doesn't exist");
+            throw new ArgumentNullException(nameof(trainImagesDir), "The evaluation directory doesn't exist");
          if (string.IsNullOrWhiteSpace(modelDir))
             throw new ArgumentNullException(nameof(modelDir), "Unspecified model train directory");
          // Directory for the tf records
@@ -619,8 +671,21 @@ namespace ODModelBuilderTF
             dynamic tf = pyTrain.Import("tensorflow");
             try {
                // Create annotation dir and start the train
-               Directory.CreateDirectory(annotationsDir);
-               tf.compat.v1.app.run(train_main.train_main);
+               if (!Directory.Exists(annotationsDir))
+                  Directory.CreateDirectory(annotationsDir);
+               var step_callback = new Action<dynamic>(kwargs =>
+               {
+                  using (Py.GIL()) {
+                     Console.WriteLine($"Step from C#: {kwargs["global_step"]}");
+                  }
+               });
+               var main_with_callback = new Action<dynamic>(unused_argv =>
+               {
+                  using (Py.GIL()) {
+                     train_main.train_main(unused_argv, step_callback);
+                  }
+               });
+               tf.compat.v1.app.run(main_with_callback);
             }
             catch (PythonException exc) {
                // Response to the exceptions
