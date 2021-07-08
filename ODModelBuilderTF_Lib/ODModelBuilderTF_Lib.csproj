@@ -57,7 +57,7 @@
     <EmbeddedResource Include="$(PythonProject)train_tensorboard.py" Link="py\train_tensorboard.py" />
     <EmbeddedResource Include="$(PythonProject)utilities.py" Link="py\utilities.py" />
     <EmbeddedResource Include="py\Activate.ps1" />
-    <EmbeddedResource Include="$(TargetDir)env.zip" />
+    <EmbeddedResource Include="$(TargetDir)env.zip" Condition="$(ConfigurationName) != 'Debug'"/>
   </ItemGroup>
 
   <ItemGroup>
@@ -74,7 +74,7 @@
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
   </Target>
 
-  <Target Name="ZipPyEnvironment" AfterTargets="PreBuild">
+  <Target Name="ZipPyEnvironment" AfterTargets="PreBuild" Condition="$(ConfigurationName) != 'Debug'">
     <PropertyGroup>
       <ZipFile>$(TargetDir)env.zip</ZipFile>
       <BuildTimestamp>0</BuildTimestamp>
