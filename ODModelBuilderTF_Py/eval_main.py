@@ -8,7 +8,14 @@ except: pass
 # Avoiding the absl error for duplicated flags if run again the cell from a notebook
 allow_flags_override();
 
-def eval_main(unused_argv):
+def eval_main(unused_argv, **kwargs):
+    """Main function for the evaluation.
+    Args:
+        unused_argv:                /
+        kwargs:                     extra argments
+            eval_callback:          a function called each new evaluation.
+            eval_timeout_callback:  a function called after the timeout without new checkpoints.
+    """
     # Init the evaluation environment
     from eval_environment import init_eval_environment
     from eval_parameters import EvalParameters
@@ -22,7 +29,7 @@ def eval_main(unused_argv):
     from object_detection import model_main_tf2
     eval_parameters.update_flags()
     # Execute the evaluation
-    model_main_tf2.main(unused_argv)
+    model_main_tf2.main(unused_argv, **kwargs)
 
 if __name__ == '__main__':
     if (not is_executable()):

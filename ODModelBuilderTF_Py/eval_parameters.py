@@ -14,7 +14,8 @@ class EvalParameters(BaseParameters):
         self._sample_1_of_n_eval_examples = None
         self._sample_1_of_n_eval_on_train_examples = 5
         self._checkpoint_dir = None
-        self._eval_timeout = 0
+        self._eval_timeout = 3600
+        self._wait_interval = 300
         self._tensorboard_port = 8080
         self._is_path.extend([
             'pipeline_config_path',
@@ -36,6 +37,10 @@ class EvalParameters(BaseParameters):
     def checkpoint_dir(self): return self._checkpoint_dir
     @checkpoint_dir.setter
     def checkpoint_dir(self, value): self._checkpoint_dir = value
+    @property
+    def wait_interval(self): return self._wait_interval
+    @wait_interval.setter
+    def wait_interval(self, value): self._wait_interval = value
     @property
     def eval_timeout(self): return self._eval_timeout
     @eval_timeout.setter

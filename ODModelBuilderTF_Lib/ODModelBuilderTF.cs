@@ -92,7 +92,16 @@ namespace ODModelBuilderTF
       /// Model evaluation
       /// </summary>
       /// <param name="checkpointDir">The checkpoint directory</param>
-      public static void Evaluate(string checkpointDir)
+      /// <param name="cancel">Cancellation token</param>
+      public static void Evaluate(string checkpointDir, CancellationToken cancel = default) => EvaluateInternal(checkpointDir, cancel: cancel);
+      /// <summary>
+      /// Model evaluation
+      /// </summary>
+      /// <param name="checkpointDir">The checkpoint directory</param>
+      /// <param name="waitIntervalSecs">The interval between checks for new checkpoint</param>
+      /// <param name="timeoutSecs">Timeout for not generated checkpoints</param>
+      /// <param name="cancel">Cancellation token</param>
+      private static void EvaluateInternal(string checkpointDir, int waitIntervalSecs = 300, int timeoutSecs = 3600, CancellationToken cancel = default)
       {
          // Check arguments
          if (string.IsNullOrWhiteSpace(checkpointDir))
@@ -110,7 +119,9 @@ namespace ODModelBuilderTF
                new PyObject[]
                {
                   Assembly.GetEntryAssembly().Location.ToPython(),
-                  "--checkpoint_dir".ToPython(), checkpointDir.ToPython()
+                  "--checkpoint_dir".ToPython(), checkpointDir.ToPython(),
+                  "--wait_interval".ToPython(), waitIntervalSecs.ToString().ToPython(),
+                  "--eval_timeout".ToPython(), timeoutSecs.ToString().ToPython()
                });
             // Import the main of the training
             dynamic eval_main = pyEval.Import("eval_main");
@@ -124,7 +135,30 @@ namespace ODModelBuilderTF
             // Import the TensorFlow
             dynamic tf = pyEval.Import("tensorflow");
             try {
-               tf.compat.v1.app.run(eval_main.eval_main);
+               var eval = new Action<dynamic>(unused_argv =>
+               {
+                  var evalCallback = new Action<dynamic>(args =>
+                  {
+                     using (Py.GIL()) { //@@@
+                        Trace.WriteLine($"Evaluation done.");
+                        Trace.WriteLine(new string('=', 80));
+                        var metrics = new PyDict(args.metrics).Items();
+                        var count = metrics.Length();
+                        for (var i = 0; i < count; i++)
+                           Trace.WriteLine($"{metrics[i][0]}\t{metrics[i][1]}");
+                        Trace.WriteLine(new string('=', 80));
+                        args.cancel = cancel.IsCancellationRequested.ToPython();
+                     }
+                  });
+                  var evalTimeoutCallback = new Action<dynamic>(args =>
+                  {
+                     using (Py.GIL())
+                        args.cancel = cancel.IsCancellationRequested.ToPython();
+                  });
+                  using (Py.GIL())
+                     eval_main.eval_main(unused_argv, eval_callback: evalCallback, eval_timeout_callback: evalTimeoutCallback);
+               });
+               tf.compat.v1.app.run(eval);
             }
             catch (PythonException exc) {
                // Response to the exceptions
@@ -217,17 +251,16 @@ namespace ODModelBuilderTF
                         using (var client = new WebClient())
                            client.DownloadFile("https://globalcdn.nuget.org/packages/python.3.7.8.nupkg", pythonNupkg);
                         // Extract the python
-                        using (var zip = ZipFile.Open(pythonNupkg, ZipArchiveMode.Read)) {
-                           foreach (var entry in zip.Entries) {
-                              if (!entry.FullName.StartsWith("tools"))
-                                 continue;
-                              var dest = Path.Combine(virtualEnvPath, entry.FullName.Substring(6));
-                              var destDir = Path.GetDirectoryName(dest);
-                              if (!Directory.Exists(destDir))
-                                 Directory.CreateDirectory(destDir);
-                              using (var writer = File.Create(dest))
-                                 entry.Open().CopyTo(writer);
-                           }
+                        using var zip = ZipFile.Open(pythonNupkg, ZipArchiveMode.Read);
+                        foreach (var entry in zip.Entries) {
+                           if (!entry.FullName.StartsWith("tools"))
+                              continue;
+                           var dest = Path.Combine(virtualEnvPath, entry.FullName[6..]);
+                           var destDir = Path.GetDirectoryName(dest);
+                           if (!Directory.Exists(destDir))
+                              Directory.CreateDirectory(destDir);
+                           using var writer = File.Create(dest);
+                           entry.Open().CopyTo(writer);
                         }
                      }
                      catch {
@@ -423,7 +456,7 @@ namespace ODModelBuilderTF
                            catch (Exception) {
                            }
                            if (sbCudaVer.ToString().Contains("V10.1")) {
-                              var version = package.Substring(package.IndexOf("==") + 2).Trim();
+                              var version = package[(package.IndexOf("==") + 2)..].Trim();
                               var whl =
                                  Directory.GetFiles(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Packages"), "*.whl")
                                  .Where(file => { var name = Path.GetFileName(file).ToLower(); return name.Contains("tensorflow") && name.Contains("cp37") && name.Contains(version); })
@@ -590,7 +623,7 @@ namespace ODModelBuilderTF
                         stdout = py.stdout.getvalue().ToString();
                         var newLen = stdout.Length;
                         if (newLen > lenOut) {
-                           stdout = stdout.Substring(lenOut);
+                           stdout = stdout[lenOut..];
                            Trace.Write(stdout);
                            lenOut = newLen;
                         }
@@ -605,7 +638,7 @@ namespace ODModelBuilderTF
                         stderr = py.stderr.getvalue().ToString();
                         var newLen = stderr.Length;
                         if (newLen > lenErr) {
-                           stderr = stderr.Substring(lenErr);
+                           stderr = stderr[lenErr..];
                            Trace.Write(stderr);
                            lenErr = newLen;
                         }
@@ -628,7 +661,8 @@ namespace ODModelBuilderTF
       /// <param name="numTrainSteps">Maximum number of train steps. Read from the pipeline config file if < 0</param>
       /// <param name="tensorboardPort">The tensorboard listening port.</param>
       /// <param name="annotationsDir">The tensorflow records directory. A temporary directory will be created if null.</param>
-      public static void Train(ModelTypes modelType, string modelDir, string trainImagesDir, string evalImagesDir, int batchSize, int numTrainSteps = -1, int tensorboardPort = 6006, string annotationsDir = null)
+      /// <param name="cancel">Cancellation token</param>
+      public static void Train(ModelTypes modelType, string modelDir, string trainImagesDir, string evalImagesDir, int batchSize, int numTrainSteps = -1, int tensorboardPort = 6006, string annotationsDir = null, CancellationToken cancel = default)
       {
          // Check arguments
          if (string.IsNullOrWhiteSpace(trainImagesDir))
@@ -662,7 +696,8 @@ namespace ODModelBuilderTF
                   "--annotations_dir".ToPython(), annotationsDir.ToPython(),
                   "--tensorboard_port".ToPython(), tensorboardPort.ToString().ToPython(),
                   "--num_train_steps".ToPython(), numTrainSteps.ToString().ToPython(),
-                  "--batch_size".ToPython(), batchSize.ToString().ToPython()
+                  "--batch_size".ToPython(), batchSize.ToString().ToPython(),
+                  "--checkpoint_every_n".ToPython(), "100".ToPython() //@@@
                });
             // Import the main of the training
             dynamic train_main = pyTrain.Import("train_main");
@@ -679,13 +714,28 @@ namespace ODModelBuilderTF
                {
                   var stepCallback = new Action<dynamic>(args =>
                   {
-                     using (Py.GIL())
-                        Console.WriteLine($"Step {args.global_step}, Per-step time {args.per_step_time} secs, Loss {args.loss}");
+                     using (Py.GIL()) {
+                        Trace.WriteLine($"Step {args.global_step}, Per-step time {args.per_step_time} secs, Loss {args.loss}");
+                        args.cancel = cancel.IsCancellationRequested.ToPython();
+                     }
                   });
+                  Task evalTask = null;
                   var checkpointCallback = new Action<dynamic>(args =>
                   {
                      using (Py.GIL())
-                        Console.WriteLine($"Checkpoint saved at {args.latest_checkpoint}");
+                        Trace.WriteLine($"Checkpoint saved at {args.latest_checkpoint}");
+                     try {
+                        evalTask ??= Task.Run(() =>
+                        {
+                           try {
+                              EvaluateInternal(modelDir, waitIntervalSecs: 10, timeoutSecs: 30, cancel: cancel);
+                           }
+                           catch (Exception exc) {
+                              Trace.WriteLine(exc);
+                           }
+                        }, cancel);
+                     }
+                     catch (OperationCanceledException) { }
                   });
                   using (Py.GIL())
                      train_main.train_main(unused_argv, step_callback:stepCallback, checkpoint_callback:checkpointCallback);
