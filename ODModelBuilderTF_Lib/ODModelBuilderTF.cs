@@ -682,8 +682,13 @@ namespace ODModelBuilderTF
                      using (Py.GIL())
                         Console.WriteLine($"Step {args.global_step}, Per-step time {args.per_step_time} secs, Loss {args.loss}");
                   });
+                  var checkpointCallback = new Action<dynamic>(args =>
+                  {
+                     using (Py.GIL())
+                        Console.WriteLine($"Checkpoint saved at {args.latest_checkpoint}");
+                  });
                   using (Py.GIL())
-                     train_main.train_main(unused_argv, stepCallback);
+                     train_main.train_main(unused_argv, step_callback:stepCallback, checkpoint_callback:checkpointCallback);
                });
                tf.compat.v1.app.run(train);
             }

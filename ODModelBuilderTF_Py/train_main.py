@@ -20,12 +20,13 @@ flags.DEFINE_integer('batch_size', 0, 'The size of batch. If < 1 it uses the '
                      'value contained in the pipeline configuration file.')
 flags.DEFINE_integer('tensorboard_port', 8080, 'The port of the tensorboard server')
 
-def train_main(unused_argv, step_callback=None, checkpoint_callback=None):
+def train_main(unused_argv, **kwargs):
     """Main function for the train.
     Args:
-        unused_argv:         /
-        step_callback:       a function called each train step.
-        checkpoint_callback: a function called after each checkpoint saving.
+        unused_argv:                /
+        kwargs:                     extra argments
+            step_callback:          a function called each train step.
+            checkpoint_callback:    a function called after each checkpoint saving.
     """
     # Init the train environment
     from pretrained_model import download_pretrained_model
@@ -52,7 +53,10 @@ def train_main(unused_argv, step_callback=None, checkpoint_callback=None):
     from train_tensorboard import start_tensorboard
     start_tensorboard(train_parameters)
     # Execute the train
-    model_main_tf2.main(unused_argv, step_callback, checkpoint_callback)
+    model_main_tf2.main(
+        unused_argv,
+        'step_callback' in kwargs and kwargs['step_callback'],
+        'checkpoint_callback' in kwargs and kwargs['checkpoint_callback'])
 
 if __name__ == '__main__':
     if (not is_executable()):
