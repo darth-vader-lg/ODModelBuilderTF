@@ -53,10 +53,7 @@ def train_main(unused_argv, **kwargs):
     from train_tensorboard import start_tensorboard
     start_tensorboard(train_parameters)
     # Execute the train
-    model_main_tf2.main(
-        unused_argv,
-        'step_callback' in kwargs and kwargs['step_callback'],
-        'checkpoint_callback' in kwargs and kwargs['checkpoint_callback'])
+    model_main_tf2.main(unused_argv, **kwargs)
 
 if __name__ == '__main__':
     if (not is_executable()):
