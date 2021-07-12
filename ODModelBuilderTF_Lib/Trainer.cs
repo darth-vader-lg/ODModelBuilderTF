@@ -141,7 +141,8 @@ namespace ODModelBuilderTF
                         args.create_checkpoint = data.CreateCheckpoint;
                      }
                   });
-                  //@@@Task evalTask = null;
+                  Task evalTask = null;
+                  var evalStart = new AutoResetEvent(false);
                   var checkpointCallback = new Action<dynamic>(args =>
                   {
                      // Read the data
@@ -153,19 +154,51 @@ namespace ODModelBuilderTF
                      // Set the response flags
                      using (Py.GIL())
                         args.cancel = data.Cancel || cancel.IsCancellationRequested;
-                     //try { @@@
-                     //   evalTask ??= Task.Run(() =>
-                     //   {
-                     //      try {
-                     //         EvaluateInternal(modelDir, waitIntervalSecs: 1, timeoutSecs: 5, cancel: cancel);
-                     //      }
-                     //      catch (Exception exc) {
-                     //         Trace.WriteLine(exc);
-                     //      }
-                     //   }, cancel);
-                     //}
-                     //catch (OperationCanceledException) { }
+                     // Check if no cancellation was required
+                     if (!data.Cancel && !cancel.IsCancellationRequested) {
+                        try {
+                           // Create the continuous evaluation task
+                           if (evalTask == null) {
+                              evalTask ??= Task.Run(() =>
+                              {
+                                 var evaluator = new Evaluator(new Evaluator.Options
+                                 {
+                                    TimeoutInterval = 0,
+                                    TrainFolder = Opt.TrainFolder,
+                                    WaitInterval = 0
+                                 });
+                                 evaluator.Evaluation += (sender, e) =>
+                                 {
+                                    try {
+                                       // Check if cancellation requested
+                                       cancel.ThrowIfCancellationRequested();
+                                       // Print metrics
+                                       Trace.WriteLine($"Evaluation done."); //@@@
+                                       Trace.WriteLine(new string('=', 80));
+                                       foreach (var m in e.Metrics)
+                                          Trace.WriteLine($"{m.Key}\t\t\t{m.Value}");
+                                       Trace.WriteLine(new string('=', 80));
+                                       // Wait for the next checkpoint
+                                       while (!evalStart.WaitOne(500))
+                                          cancel.ThrowIfCancellationRequested();
+                                    }
+                                    catch (Exception) {
+                                       e.Cancel = true;
+                                    }
+                                 };
+                                 evaluator.EvaluationTimeout += (sender, e) => e.Cancel = data.Cancel || cancel.IsCancellationRequested;
+                                 // Start the evaluation
+                                 evaluator.Evaluate(cancel);
+                              }, cancel);
+                           }
+                           // Just signal to start a new evaluation if the task was already active
+                           else
+                              evalStart.Set();
+                        }
+                        catch (OperationCanceledException) { }
+                     }
                   });
+                  // Start the train loop
                   using (Py.GIL())
                      train_main.train_main(unused_argv, step_callback: stepCallback, checkpoint_callback: checkpointCallback);
                });
@@ -204,13 +237,10 @@ namespace ODModelBuilderTF
    }
 
    /// <summary>
-   /// Trainer class
+   /// Trainer options
    /// </summary>
    public partial class Trainer
    {
-      /// <summary>
-      /// Trainer options
-      /// </summary>
       public class Options
       {
          #region Properties
