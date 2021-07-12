@@ -22,6 +22,14 @@ namespace ODModelBuilderTF
       #endregion
       #region Events
       /// <summary>
+      /// Evaluation ready event
+      /// </summary>
+      public event EvaluationEventHandler Evaluation;
+      /// <summary>
+      /// Evaluation timeout ready event
+      /// </summary>
+      public event EvaluationTimeoutEventHandler EvaluationTimeout;
+      /// <summary>
       /// Train step event
       /// </summary>
       public event TrainStepEventHandler TrainStep;
@@ -41,6 +49,61 @@ namespace ODModelBuilderTF
       /// <param name="opt">Trainer options</param>
       public Trainer(Options opt = default) => Opt = opt ?? new Options();
       /// <summary>
+      /// Evaluation task
+      /// </summary>
+      /// <param name="checkPointReady">New check point ready signal</param>
+      /// <param name="cancel">Cancellation token</param>
+      /// <returns></returns>
+      private Task EvaluationTask(EventWaitHandle checkPointReady, CancellationToken cancel)
+      {
+         return Task.Run(() =>
+         {
+            // Evaluation options
+            var evaluator = new Evaluator(new Evaluator.Options
+            {
+               TimeoutInterval = 0,
+               TrainFolder = Opt.TrainFolder,
+               WaitInterval = 0
+            });
+            // Evaluation done event
+            evaluator.Evaluation += (sender, e) =>
+            {
+               try {
+                  // Check if cancellation requested
+                  cancel.ThrowIfCancellationRequested();
+                  // Print metrics
+                  Trace.WriteLine($"Evaluation done."); //@@@
+                  Trace.WriteLine(new string('=', 80));
+                  foreach (var m in e.Metrics)
+                     Trace.WriteLine($"{m.Key}\t\t\t{m.Value}");
+                  Trace.WriteLine(new string('=', 80));
+                  // Wait for the next checkpoint
+                  while (!checkPointReady.WaitOne(500))
+                     cancel.ThrowIfCancellationRequested();
+                  cancel.ThrowIfCancellationRequested();
+                  // Call the evaluation ready function
+                  OnEvaluation(e);
+               }
+               catch (Exception) {
+                  e.Cancel = true;
+               }
+            };
+            // Evaluation timeout event
+            evaluator.EvaluationTimeout += (sender, e) =>
+            {
+               try {
+                  cancel.ThrowIfCancellationRequested();
+                  OnEvaluationTimeout(e);
+               }
+               catch (Exception) {
+                  e.Cancel = true;
+               }
+            };
+            // Start the evaluation
+            evaluator.Evaluate(cancel);
+         }, cancel);
+      }
+      /// <summary>
       /// Checkpoint function
       /// </summary>
       /// <param name="e">Checkpoint arguments</param>
@@ -48,6 +111,32 @@ namespace ODModelBuilderTF
       {
          try {
             Checkpoint?.Invoke(this, e);
+         }
+         catch (Exception exc) {
+            Trace.WriteLine(exc);
+         }
+      }
+      /// <summary>
+      /// Evaluation ready function
+      /// </summary>
+      /// <param name="e">Evaluation arguments</param>
+      protected void OnEvaluation(EvaluationEventArgs e)
+      {
+         try {
+            Evaluation?.Invoke(this, e);
+         }
+         catch (Exception exc) {
+            Trace.WriteLine(exc);
+         }
+      }
+      /// <summary>
+      /// Evaluation timeout function
+      /// </summary>
+      /// <param name="e">Evaluation timeout arguments</param>
+      protected void OnEvaluationTimeout(EvaluationTimeoutEventArgs e)
+      {
+         try {
+            EvaluationTimeout?.Invoke(this, e);
          }
          catch (Exception exc) {
             Trace.WriteLine(exc);
@@ -85,6 +174,8 @@ namespace ODModelBuilderTF
             throw new ArgumentNullException(nameof(Opt.EvalImagesFolder), "The evaluation directory doesn't exist");
          if (string.IsNullOrWhiteSpace(Opt.TrainFolder))
             throw new ArgumentNullException(nameof(Opt.TrainFolder), "Unspecified model train directory");
+         // Cancellation token
+         var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancel);
          // Directory for the tf records
          var delAnnotationDir = string.IsNullOrWhiteSpace(Opt.TrainRecordsFolder);
          var annotationsDir = !string.IsNullOrWhiteSpace(Opt.TrainRecordsFolder) ? Opt.TrainRecordsFolder : Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
@@ -135,14 +226,19 @@ namespace ODModelBuilderTF
                         data = new TrainStepEventArgs((int)args.global_step, (double)args.per_step_time, (double)args.loss);
                      // Call the event function
                      OnTrainStep(data);
+                     if (data.Cancel)
+                        cancellation.Cancel();
                      // Set the response flags
                      using (Py.GIL()) {
-                        args.cancel = data.Cancel || cancel.IsCancellationRequested;
+                        args.cancel = cancellation.IsCancellationRequested;
                         args.create_checkpoint = data.CreateCheckpoint;
                      }
                   });
+                  // Online evaluation task
                   Task evalTask = null;
-                  var evalStart = new AutoResetEvent(false);
+                  // Checkpoint ready signal
+                  var checkPointReady = new AutoResetEvent(false);
+                  // Checkpoint ready callback function
                   var checkpointCallback = new Action<dynamic>(args =>
                   {
                      // Read the data
@@ -151,49 +247,20 @@ namespace ODModelBuilderTF
                         data = new CheckpointEventArgs((string)args.latest_checkpoint, (string[])args.checkpoints);
                      // Call the event function
                      OnCheckpoint(data);
+                     if (data.Cancel)
+                        cancellation.Cancel();
                      // Set the response flags
                      using (Py.GIL())
-                        args.cancel = data.Cancel || cancel.IsCancellationRequested;
+                        args.cancel = cancellation.IsCancellationRequested;
                      // Check if no cancellation was required
-                     if (!data.Cancel && !cancel.IsCancellationRequested) {
+                     if (!cancellation.IsCancellationRequested) {
                         try {
                            // Create the continuous evaluation task
-                           if (evalTask == null) {
-                              evalTask ??= Task.Run(() =>
-                              {
-                                 var evaluator = new Evaluator(new Evaluator.Options
-                                 {
-                                    TimeoutInterval = 0,
-                                    TrainFolder = Opt.TrainFolder,
-                                    WaitInterval = 0
-                                 });
-                                 evaluator.Evaluation += (sender, e) =>
-                                 {
-                                    try {
-                                       // Check if cancellation requested
-                                       cancel.ThrowIfCancellationRequested();
-                                       // Print metrics
-                                       Trace.WriteLine($"Evaluation done."); //@@@
-                                       Trace.WriteLine(new string('=', 80));
-                                       foreach (var m in e.Metrics)
-                                          Trace.WriteLine($"{m.Key}\t\t\t{m.Value}");
-                                       Trace.WriteLine(new string('=', 80));
-                                       // Wait for the next checkpoint
-                                       while (!evalStart.WaitOne(500))
-                                          cancel.ThrowIfCancellationRequested();
-                                    }
-                                    catch (Exception) {
-                                       e.Cancel = true;
-                                    }
-                                 };
-                                 evaluator.EvaluationTimeout += (sender, e) => e.Cancel = data.Cancel || cancel.IsCancellationRequested;
-                                 // Start the evaluation
-                                 evaluator.Evaluate(cancel);
-                              }, cancel);
-                           }
-                           // Just signal to start a new evaluation if the task was already active
+                           if (evalTask == null)
+                              evalTask = EvaluationTask(checkPointReady, cancellation.Token);
+                           // Or just signal to start a new evaluation if the task was already active
                            else
-                              evalStart.Set();
+                              checkPointReady.Set();
                         }
                         catch (OperationCanceledException) { }
                      }
