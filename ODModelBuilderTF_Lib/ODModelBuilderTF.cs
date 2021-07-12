@@ -20,14 +20,6 @@ namespace ODModelBuilderTF
    {
       #region Fields
       /// <summary>
-      /// Initialization complete
-      /// </summary>
-      private static bool initialized;
-      /// <summary>
-      /// Primary python scope
-      /// </summary>
-      private static dynamic py;
-      /// <summary>
       /// Stderr redirection
       /// </summary>
       private static bool redirectStderr;
@@ -38,56 +30,19 @@ namespace ODModelBuilderTF
       /// <summary>
       /// Thread state
       /// </summary>
-      private static IntPtr ts;
+      private static IntPtr threadState;
+      #endregion
+      #region Properties
+      /// <summary>
+      /// Initialized status
+      /// </summary>
+      internal static bool Initialized { get; private set; }
+      /// <summary>
+      /// Initialized status
+      /// </summary>
+      internal static PyScope MainScope { get; private set; }
       #endregion
       #region Methods
-      /// <summary>
-      /// Initialization check
-      /// </summary>
-      private static void CheckInitialization()
-      {
-         if (!initialized)
-            throw new InvalidOperationException($"The Python engine is not initialized. Initialization must be done calling {nameof(ODModelBuilderTF)}.{nameof(Init)}");
-      }
-      /// <summary>
-      /// Execute a script
-      /// </summary>
-      /// <param name="script">Script to be executed</param>
-      /// <param name="workingDir">Working directory</param>
-      public static int Exec(string script, string workingDir = null)
-      {
-         // Check the initialization state
-         CheckInitialization();
-         // Store the current directory
-         var cd = Environment.CurrentDirectory;
-         // Token to stop the output trace
-         try {
-            // Set the current directory in the root of the python environment
-            if (!string.IsNullOrEmpty(workingDir))
-               Environment.CurrentDirectory = workingDir;
-            // Execute the script
-            using var gil = Py.GIL();
-            ((PyScope)py).Exec(script);
-         }
-         catch (PythonException exc) {
-            // Check if the type of the exception was simply a system exit
-            if (exc.PyType != Exceptions.SystemExit)
-               throw;
-            // Return the exit result
-            var result = new PyObject(exc.PyValue).AsManagedObject(typeof(int));
-            if (result != null)
-               return (int)result;
-         }
-         catch (Exception exc) {
-            Trace.WriteLine(exc);
-            throw;
-         }
-         finally {
-            // Restore the previous directory
-            Environment.CurrentDirectory = cd;
-         }
-         return 0;
-      }
       /// <summary>
       /// Model evaluation
       /// </summary>
@@ -112,7 +67,7 @@ namespace ODModelBuilderTF
             // Acquire the GIL
             using var gil = Py.GIL();
             // Create a new scope
-            var pyEval = ((PyScope)py).NewScope();
+            var pyEval = MainScope.NewScope();
             // Prepare the arguments
             dynamic sys = pyEval.Import("sys");
             sys.argv = new PyList(
@@ -214,6 +169,8 @@ namespace ODModelBuilderTF
          // Create a mutex to avoid overlapped initializations
          virtualEnvPath = string.IsNullOrEmpty(virtualEnvPath) ? null : Path.GetFullPath(virtualEnvPath);
          using var mutex = new Mutex(true, !string.IsNullOrEmpty(virtualEnvPath) ? virtualEnvPath.Replace("\\", "_").Replace(":", "-") : Assembly.GetEntryAssembly().GetName().Name);
+         if (Initialized)
+            return;
          // Check if it's required a virtual environment
          if (!string.IsNullOrEmpty(virtualEnvPath)) {
             // Name of the downloaded Python zip file and the get pip script
@@ -361,9 +318,9 @@ namespace ODModelBuilderTF
             PythonEngine.Initialize();
             // Create the python scope with right paths and set the python executable
             using (Py.GIL()) {
-               py = Py.CreateScope();
-               py.Import("sys");
-               py.sys.path = new PyList(new[]
+               MainScope = Py.CreateScope();
+               var sys = MainScope.Import("sys");
+               sys.path = new PyList(new[]
                {
                   virtualEnvPath,
                   Path.Combine(virtualEnvPath, "Scripts"),
@@ -371,16 +328,16 @@ namespace ODModelBuilderTF
                   Path.Combine(virtualEnvPath, "Lib"),
                   Path.Combine(virtualEnvPath, "Lib", "site-packages")
                }.Select(p => p.ToPython()).ToArray());
-               py.sys.executable = Path.Combine(virtualEnvPath, "python.exe").ToPython();
+               sys.executable = Path.Combine(virtualEnvPath, "python.exe").ToPython();
             }
             // Redirect the python's outputs
-            RedirectOutputs(py, redirectStdout, redirectStderr);
+            RedirectOutputs(MainScope, redirectStdout, redirectStderr);
             // Token to stop the tracing
             var traceCancel = new CancellationTokenSource();
             PythonEngine.AddShutdownHandler(() => traceCancel.Cancel());
             // Enable the trace of the output
             TracePythonOutputs(traceCancel.Token);
-            ts = PythonEngine.BeginAllowThreads();
+            threadState = PythonEngine.BeginAllowThreads();
          }
          InitPythonEngine();
          var reinit = false;
@@ -392,9 +349,9 @@ namespace ODModelBuilderTF
                var result = new List<string>();
                using (Py.GIL()) {
                   // Package resources module and workingset
-                  var pkg = py.Import("pkg_resources");
-                  py.Import("importlib");
-                  py.importlib.reload(pkg);
+                  var pkg = MainScope.Import("pkg_resources");
+                  var importlib = MainScope.Import("importlib");
+                  importlib.reload(pkg);
                   var ws = pkg.WorkingSet();
                   // Check all requirements
                   foreach (var req in requirements) {
@@ -470,10 +427,11 @@ namespace ODModelBuilderTF
                      writer.Close();
                      // Upgrade pip and install the requirements
                      using (Py.GIL()) {
-                        py.Import(PythonEngine.ModuleFromString("utilities", GetPythonScript("utilities.py")));
-                        py.utilities.execute_script(new[] { "-m", "pip", "install", "--upgrade", "pip" });
-                        py.utilities.execute_script(new[] { "-m", "pip", "install", "--upgrade", "setuptools" });
-                        py.utilities.execute_script(new[] { "-m", "pip", "install", "--no-cache", "--no-deps", "-r", tempRequirements });
+                        MainScope.Import(PythonEngine.ModuleFromString("utilities", GetPythonScript("utilities.py")));
+                        var utilities = ((dynamic)MainScope).utilities;
+                        utilities.execute_script(new[] { "-m", "pip", "install", "--upgrade", "pip" });
+                        utilities.execute_script(new[] { "-m", "pip", "install", "--upgrade", "setuptools" });
+                        utilities.execute_script(new[] { "-m", "pip", "install", "--no-cache", "--no-deps", "-r", tempRequirements });
                      }
                      // Check for successfully installation
                      missing = GetMissingRequirements(requirements);
@@ -501,10 +459,10 @@ namespace ODModelBuilderTF
                if (GetMissingRequirements(new[] { "object-detection" }).Count > 0) {
                   reinit = true;
                   using (Py.GIL()) {
-                     py.Import(PythonEngine.ModuleFromString("default_cfg", GetPythonScript("default_cfg.py")));
-                     py.Import(PythonEngine.ModuleFromString("utilities", GetPythonScript("utilities.py")));
-                     py.Import(PythonEngine.ModuleFromString("od_install", GetPythonScript("od_install.py")));
-                     py.od_install.install_object_detection(no_cache: true, no_deps: true);
+                     MainScope.Import(PythonEngine.ModuleFromString("default_cfg", GetPythonScript("default_cfg.py")));
+                     MainScope.Import(PythonEngine.ModuleFromString("utilities", GetPythonScript("utilities.py")));
+                     MainScope.Import(PythonEngine.ModuleFromString("od_install", GetPythonScript("od_install.py")));
+                     ((dynamic)MainScope).od_install.install_object_detection(no_cache: true, no_deps: true);
                   }
                }
                if (GetMissingRequirements(new[] { "object-detection" }).Count > 0) {
@@ -519,10 +477,10 @@ namespace ODModelBuilderTF
             reinit = true;
          }
          if (reinit) {
-            PythonEngine.EndAllowThreads(ts);
+            PythonEngine.EndAllowThreads(threadState);
             using (Py.GIL()) {
-               if (py != null)
-                  py.Dispose();
+               if (MainScope != null)
+                  MainScope.Dispose();
             }
             PythonEngine.Shutdown();
             InitPythonEngine();
@@ -555,10 +513,10 @@ namespace ODModelBuilderTF
          };
          foreach (var module in modules) {
             using var gil = Py.GIL();
-            py.Import(PythonEngine.ModuleFromString(module, GetPythonScript($"{module}.py")));
+            MainScope.Import(PythonEngine.ModuleFromString(module, GetPythonScript($"{module}.py")));
          }
          // Initialization terminated
-         initialized = true;
+         Initialized = true;
       }
       /// <summary>
       /// Redirect the outputs of Python to string buffers
@@ -600,6 +558,7 @@ namespace ODModelBuilderTF
             if (cancel.IsCancellationRequested)
                return;
             // Read the current output buffers
+            var py = (dynamic)MainScope;
             string stdout;
             string stderr;
             using (Py.GIL()) {
@@ -649,127 +608,6 @@ namespace ODModelBuilderTF
                }
             }
          }, cancel);
-      }
-      /// <summary>
-      /// Model train
-      /// </summary>
-      /// <param name="modelType">Type of the model</param>
-      /// <param name="modelDir">The train data directory</param>
-      /// <param name="trainImagesDir">The train images and annotations dir</param>
-      /// <param name="evalImagesDir">The evaluation images and annotations dir</param>
-      /// <param name="batchSize">The batch size of the train</param>
-      /// <param name="numTrainSteps">Maximum number of train steps. Read from the pipeline config file if < 0</param>
-      /// <param name="tensorboardPort">The tensorboard listening port.</param>
-      /// <param name="annotationsDir">The tensorflow records directory. A temporary directory will be created if null.</param>
-      /// <param name="cancel">Cancellation token</param>
-      public static void Train(ModelTypes modelType, string modelDir, string trainImagesDir, string evalImagesDir, int batchSize, int numTrainSteps = -1, int tensorboardPort = 6006, string annotationsDir = null, CancellationToken cancel = default)
-      {
-         // Check arguments
-         if (string.IsNullOrWhiteSpace(trainImagesDir))
-            throw new ArgumentNullException(nameof(trainImagesDir), "Unspecified train images directory");
-         if (!Directory.Exists(trainImagesDir))
-            throw new ArgumentNullException(nameof(trainImagesDir), "The train images directory doesn't exist");
-         if (string.IsNullOrWhiteSpace(evalImagesDir))
-            throw new ArgumentNullException(nameof(trainImagesDir), "Unspecified evaluation images directory");
-         if (!Directory.Exists(evalImagesDir))
-            throw new ArgumentNullException(nameof(trainImagesDir), "The evaluation directory doesn't exist");
-         if (string.IsNullOrWhiteSpace(modelDir))
-            throw new ArgumentNullException(nameof(modelDir), "Unspecified model train directory");
-         // Directory for the tf records
-         var delAnnotationDir = string.IsNullOrWhiteSpace(annotationsDir);
-         annotationsDir = !string.IsNullOrWhiteSpace(annotationsDir) ? annotationsDir : Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-         try {
-            // Acquire the GIL
-            using var gil = Py.GIL();
-            // Create a new scope
-            var pyTrain = ((PyScope)py).NewScope();
-            // Prepare the arguments
-            dynamic sys = pyTrain.Import("sys");
-            sys.argv = new PyList(
-               new PyObject[]
-               {
-                  Assembly.GetEntryAssembly().Location.ToPython(),
-                  "--model_type".ToPython(), modelType.ToText().ToPython(),
-                  "--train_images_dir".ToPython(), trainImagesDir.ToPython(),
-                  "--eval_images_dir".ToPython(), evalImagesDir.ToPython(),
-                  "--model_dir".ToPython(), modelDir.ToPython(),
-                  "--annotations_dir".ToPython(), annotationsDir.ToPython(),
-                  "--tensorboard_port".ToPython(), tensorboardPort.ToString().ToPython(),
-                  "--num_train_steps".ToPython(), numTrainSteps.ToString().ToPython(),
-                  "--batch_size".ToPython(), batchSize.ToString().ToPython(),
-                  "--checkpoint_every_n".ToPython(), "100".ToPython() //@@@
-               });
-            // Import the main of the training
-            dynamic train_main = pyTrain.Import("train_main");
-            // Import the module here just for having the flags defined
-            train_main.allow_flags_override();
-            pyTrain.Import("object_detection.model_main_tf2");
-            // Import the TensorFlow
-            dynamic tf = pyTrain.Import("tensorflow");
-            try {
-               // Create annotation dir and start the train
-               if (!Directory.Exists(annotationsDir))
-                  Directory.CreateDirectory(annotationsDir);
-               var train = new Action<dynamic>(unused_argv =>
-               {
-                  var stepCallback = new Action<dynamic>(args =>
-                  {
-                     using (Py.GIL()) {
-                        Trace.WriteLine($"Step {args.global_step}, Per-step time {args.per_step_time} secs, Loss {args.loss}");
-                        args.cancel = cancel.IsCancellationRequested.ToPython();
-                     }
-                  });
-                  Task evalTask = null;
-                  var checkpointCallback = new Action<dynamic>(args =>
-                  {
-                     using (Py.GIL())
-                        Trace.WriteLine($"Checkpoint saved at {args.latest_checkpoint}");
-                     try {
-                        evalTask ??= Task.Run(() =>
-                        {
-                           try {
-                              EvaluateInternal(modelDir, waitIntervalSecs: 10, timeoutSecs: 30, cancel: cancel);
-                           }
-                           catch (Exception exc) {
-                              Trace.WriteLine(exc);
-                           }
-                        }, cancel);
-                     }
-                     catch (OperationCanceledException) { }
-                  });
-                  using (Py.GIL())
-                     train_main.train_main(unused_argv, step_callback:stepCallback, checkpoint_callback:checkpointCallback);
-               });
-               tf.compat.v1.app.run(train);
-            }
-            catch (PythonException exc) {
-               // Response to the exceptions
-               var action = exc.PyType switch
-               {
-                  var pexc when pexc == Exceptions.SystemExit => new Action(() => { }),
-                  var pexc when pexc == Exceptions.KeyboardInterrupt => new Action(() =>
-                  {
-                     Trace.WriteLine("Interrupted by user");
-                  }),
-                  _ => new Action(() => { throw exc; })
-               };
-               action();
-            }
-         }
-         catch (Exception exc) {
-            Trace.WriteLine(exc.ToString().Replace("\\n", Environment.NewLine));
-            throw;
-         }
-         finally {
-            // Delete the annotations directory
-            try {
-               if (delAnnotationDir && Directory.Exists(annotationsDir))
-                  Directory.Delete(annotationsDir, true);
-            }
-            catch (Exception exc) {
-               Trace.WriteLine(exc);
-            }
-         }
       }
       #endregion
    }

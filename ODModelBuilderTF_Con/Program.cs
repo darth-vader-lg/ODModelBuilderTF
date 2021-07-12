@@ -21,17 +21,25 @@ namespace ODModelBuilderTF_Con
          var virtualEnvDir = Path.Combine(Path.GetTempPath(), $"{assemblyName.Name}-{assemblyName.Version}");
 #endif
          OD.Init(true, true, virtualEnvDir);
-         var modelType = ModelTypes.SSD_MobileNet_V2_320x320;
-         var modelDir = @"D:\ObjectDetection\caz\TensorFlow\trained-model";
-         var trainImagesDir = @"D:\ObjectDetection\caz\TensorFlow\images\train";
-         var evalImagesDir = @"D:\ObjectDetection\caz\TensorFlow\images\eval";
+         var trainer = new Trainer(new Trainer.Options
+         {
+            BatchSize = 8,
+            CheckPointEvery = 50,//@@@1000,
+            EvalImagesFolder = @"D:\ObjectDetection\caz\TensorFlow\images\eval",
+            ModelType = ModelTypes.SSD_MobileNet_V2_320x320,
+            NumTrainSteps = 50000,
+            TensorBoardPort = 8080,
+            TrainFolder = @"D:\ObjectDetection\caz\TensorFlow\trained-model",
+            TrainImagesFolder = @"D:\ObjectDetection\caz\TensorFlow\images\train",
+            TrainRecordsFolder = @"D:\ObjectDetection\caz\TensorFlow\annotations"
+         });
+         trainer.TrainStep += (sender, e) =>
+         {
+            Console.WriteLine($"Step number:{e.StepNumber}\t\tstep time: {e.StepTime:N3} secs\t\ttotal loss:{e.TotalLoss:N3}");
+         };
          var exitToken = new CancellationTokenSource();
          Console.CancelKeyPress += (sender, e) => exitToken.Cancel();
-         var taskTrain = Task.Run(() => OD.Train(modelType, modelDir, trainImagesDir, evalImagesDir, 4, 50000));
-         await Task.Delay(30000);
-         var taskEval = Task.CompletedTask;//@@@ Task.Run(() => OD.Evaluate(modelDir));
-         var taskExit = Task.Delay(-1, exitToken.Token).ContinueWith(t => { });
-         await Task.WhenAny(Task.WhenAll(taskTrain, taskEval), taskExit);
+         await Task.Run(() => trainer.Train(exitToken.Token));
       }
    }
 }
