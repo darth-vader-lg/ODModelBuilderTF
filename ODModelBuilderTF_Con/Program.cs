@@ -1,6 +1,7 @@
 ﻿using ODModelBuilderTF;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,8 +23,8 @@ namespace ODModelBuilderTF_Con
          OD.Init(true, true, virtualEnvDir);
          var trainer = new Trainer(new Trainer.Options
          {
-            BatchSize = 8,
-            CheckPointEvery = 100,//@@@1000,
+            BatchSize = 16,
+            CheckPointEvery = null, //@@@100,//@@@1000,
             EvalImagesFolder = @"D:\ObjectDetection\caz\TensorFlow\images\eval",
             ExportFolder = @"D:\ObjectDetection\caz\TensorFlow\exported-model",
             ModelType = ModelTypes.SSD_MobileNet_V2_320x320,

@@ -30,10 +30,6 @@ namespace ODModelBuilderTF
       /// </summary>
       public event EvaluationEventHandler Evaluation;
       /// <summary>
-      /// Evaluation timeout ready event
-      /// </summary>
-      public event EvaluationTimeoutEventHandler EvaluationTimeout;
-      /// <summary>
       /// Frozen graph exported event
       /// </summary>
       public event ExportEventHandler FrozenGraphExported;
@@ -61,142 +57,133 @@ namespace ODModelBuilderTF
       /// <param name="opt">Trainer options</param>
       public Trainer(Options opt = default) => Opt = opt ?? new Options();
       /// <summary>
-      /// Evaluation task
+      /// Continuous evaluation
       /// </summary>
       /// <param name="checkPointReady">New check point ready signal</param>
-      /// <param name="cancel">Cancellation token</param>
-      /// <returns>The task</returns>
-      private Task EvaluationTask(EventWaitHandle checkPointReady, CancellationToken cancel)
+      private void EvaluateContinuously(EventWaitHandle checkPointReady, CancellationToken cancel)
       {
-         return Task.Run(() =>
+         var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancel);
+         // Evaluation options
+         var evaluator = new Evaluator(new Evaluator.Options
          {
-            var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancel);
-            // Evaluation options
-            var evaluator = new Evaluator(new Evaluator.Options
-            {
-               TimeoutInterval = 0,
-               TrainFolder = Opt.TrainFolder,
-               WaitInterval = 0
-            });
-            // Evaluation done event
-            evaluator.Evaluation += (sender, e) =>
-            {
-               try {
-                  // Check if cancellation requested
+            TimeoutInterval = 0,
+            TrainFolder = Opt.TrainFolder,
+            WaitInterval = 0
+         });
+         // Evaluation done event
+         evaluator.Evaluation += (sender, e) =>
+         {
+            try {
+               // Check if cancellation requested
+               cancellation.Token.ThrowIfCancellationRequested();
+               // Print metrics
+               Trace.WriteLine($"Evaluation done."); //@@@
+               Trace.WriteLine(new string('=', 80));
+               foreach (var m in e.Metrics)
+                  Trace.WriteLine($"{m.Key}\t\t\t{m.Value}");
+               Trace.WriteLine(new string('=', 80));
+               // Call the evaluation ready function
+               OnEvaluation(e);
+               if (e.Cancel)
+                  cancellation.Cancel();
+               cancellation.Token.ThrowIfCancellationRequested();
+               // Export the model
+               //@@@ExportLatestCheckpoint(cancellation.Token);
+            }
+            catch (OperationCanceledException) {
+               e.Cancel = true;
+            }
+         };
+         // Evaluation timeout event
+         evaluator.EvaluationTimeout += (sender, e) =>
+         {
+            try {
+               // Wait for the next checkpoint
+               checkPointReady.Reset();
+               while (!checkPointReady.WaitOne(500))
                   cancellation.Token.ThrowIfCancellationRequested();
-                  // Print metrics
-                  Trace.WriteLine($"Evaluation done."); //@@@
-                  Trace.WriteLine(new string('=', 80));
-                  foreach (var m in e.Metrics)
-                     Trace.WriteLine($"{m.Key}\t\t\t{m.Value}");
-                  Trace.WriteLine(new string('=', 80));
-                  // Wait for the next checkpoint
-                  while (!checkPointReady.WaitOne(500))
-                     cancellation.Token.ThrowIfCancellationRequested();
-                  cancellation.Token.ThrowIfCancellationRequested();
-                  // Call the evaluation ready function
-                  OnEvaluation(e);
-                  if (e.Cancel)
-                     cancellation.Cancel();
-                  cancellation.Token.ThrowIfCancellationRequested();
-                  // Export the model
-                  ExportTask(cancellation.Token).Wait(cancellation.Token);
-               }
-               catch (Exception exc) {
-                  Trace.WriteLine(exc);//@@@
-                  e.Cancel = true;
-               }
-            };
-            // Evaluation timeout event
-            evaluator.EvaluationTimeout += (sender, e) =>
-            {
-               try {
-                  cancel.ThrowIfCancellationRequested();
-                  OnEvaluationTimeout(e);
-               }
-               catch (Exception) {
-                  e.Cancel = true;
-               }
-            };
-            // Start the evaluation
-            evaluator.Evaluate(cancel);
-         }, cancel);
+               cancellation.Token.ThrowIfCancellationRequested();
+               e.Cancel = false;
+            }
+            catch (OperationCanceledException) {
+               e.Cancel = true;
+            }
+         };
+         // Start the evaluation
+         evaluator.Evaluate(cancellation.Token);
+         Trace.WriteLine("Evaluation exited!!!!!!!!!!!!!!!!!!!!");//@@@
       }
       /// <summary>
-      /// Export task
+      /// Export the latest checkpoint
       /// </summary>
       /// <param name="cancel">Cancellation token</param>
-      /// <returns>The task</returns>
-      private Task ExportTask(CancellationToken cancel)
+      private void ExportLatestCheckpoint(CancellationToken cancel)
       {
-         return Task.Run(() =>
+         // Check for arguments
+         if (string.IsNullOrWhiteSpace(Opt.ExportFolder))
+            throw new ArgumentException("Undefined export folder");
+         var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancel);
+         // Evaluation options
+         var exporter = new Exporter(new Exporter.Options
          {
-            // Check for arguments
-            if (string.IsNullOrWhiteSpace(Opt.ExportFolder))
-               throw new ArgumentException("Undefined export folder");
-            var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancel);
-            // Evaluation options
-            var exporter = new Exporter(new Exporter.Options
-            {
-               FrozenGraphFileName = Opt.FrozenGraphFileName,
-               OnnxModelFileName = Opt.OnnxModelFileName,
-               OutputFolder = Opt.ExportFolder,
-               TrainFolder = Opt.TrainFolder
-            });
-            // Saved model exported event
-            exporter.SavedModelExported += (sender, e) =>
-            {
-               try {
-                  // Check if cancellation requested
-                  cancellation.Token.ThrowIfCancellationRequested();
-                  Trace.WriteLine($"Saved model exported in the folder {exporter.Opt.OutputFolder}."); //@@@
-                  // Call the exported saved_model function
-                  OnExportedSavedModel(e);
-                  if (e.Cancel)
-                     cancellation.Cancel();
-                  cancellation.Token.ThrowIfCancellationRequested();
-               }
-               catch (Exception) {
-                  e.Cancel = true;
-               }
-            };
-            // Frozen graph exported event
-            exporter.FrozenGraphExported += (sender, e) =>
-            {
-               try {
-                  // Check if cancellation requested
-                  cancellation.Token.ThrowIfCancellationRequested();
-                  Trace.WriteLine($"Frozen graph exported in {Path.Combine(exporter.Opt.OutputFolder, exporter.Opt.FrozenGraphFileName)}."); //@@@
-                  // Call the exported frozen graph function
-                  OnExportedFrozenGraph(e);
-                  if (e.Cancel)
-                     cancellation.Cancel();
-                  cancellation.Token.ThrowIfCancellationRequested();
-               }
-               catch (Exception) {
-                  e.Cancel = true;
-               }
-            };
-            // Frozen graph exported event
-            exporter.OnnxExported += (sender, e) =>
-            {
-               try {
-                  // Check if cancellation requested
-                  cancellation.Token.ThrowIfCancellationRequested();
-                  Trace.WriteLine($"Onnx model exported in {Path.Combine(exporter.Opt.OutputFolder, exporter.Opt.OnnxModelFileName)}."); //@@@
-                  // Call the exported frozen graph function
-                  OnExportedOnnx(e);
-                  if (e.Cancel)
-                     cancellation.Cancel();
-                  cancellation.Token.ThrowIfCancellationRequested();
-               }
-               catch (Exception) {
-                  e.Cancel = true;
-               }
-            };
-            // Start the export
-            exporter.Export(cancel);
-         }, cancel);
+            FrozenGraphFileName = Opt.FrozenGraphFileName,
+            OnnxModelFileName = Opt.OnnxModelFileName,
+            OutputFolder = Opt.ExportFolder,
+            TrainFolder = Opt.TrainFolder
+         });
+         // Saved model exported event
+         exporter.SavedModelExported += (sender, e) =>
+         {
+            try {
+               // Check if cancellation requested
+               cancellation.Token.ThrowIfCancellationRequested();
+               Trace.WriteLine($"Saved model exported in the folder {exporter.Opt.OutputFolder}."); //@@@
+               // Call the exported saved_model function
+               OnExportedSavedModel(e);
+               if (e.Cancel)
+                  cancellation.Cancel();
+               cancellation.Token.ThrowIfCancellationRequested();
+            }
+            catch (OperationCanceledException) {
+               e.Cancel = true;
+            }
+         };
+         // Frozen graph exported event
+         exporter.FrozenGraphExported += (sender, e) =>
+         {
+            try {
+               // Check if cancellation requested
+               cancellation.Token.ThrowIfCancellationRequested();
+               Trace.WriteLine($"Frozen graph exported in {Path.Combine(exporter.Opt.OutputFolder, exporter.Opt.FrozenGraphFileName)}."); //@@@
+               // Call the exported frozen graph function
+               OnExportedFrozenGraph(e);
+               if (e.Cancel)
+                  cancellation.Cancel();
+               cancellation.Token.ThrowIfCancellationRequested();
+            }
+            catch (OperationCanceledException) {
+               e.Cancel = true;
+            }
+         };
+         // Frozen graph exported event
+         exporter.OnnxExported += (sender, e) =>
+         {
+            try {
+               // Check if cancellation requested
+               cancellation.Token.ThrowIfCancellationRequested();
+               Trace.WriteLine($"Onnx model exported in {Path.Combine(exporter.Opt.OutputFolder, exporter.Opt.OnnxModelFileName)}."); //@@@
+               // Call the exported frozen graph function
+               OnExportedOnnx(e);
+               if (e.Cancel)
+                  cancellation.Cancel();
+               cancellation.Token.ThrowIfCancellationRequested();
+            }
+            catch (OperationCanceledException) {
+               e.Cancel = true;
+            }
+         };
+         // Start the export
+         exporter.Export(cancel);
       }
       /// <summary>
       /// Checkpoint function
@@ -219,19 +206,6 @@ namespace ODModelBuilderTF
       {
          try {
             Evaluation?.Invoke(this, e);
-         }
-         catch (Exception exc) {
-            Trace.WriteLine(exc);
-         }
-      }
-      /// <summary>
-      /// Evaluation timeout function
-      /// </summary>
-      /// <param name="e">Evaluation timeout arguments</param>
-      protected virtual void OnEvaluationTimeout(EvaluationTimeoutEventArgs e)
-      {
-         try {
-            EvaluationTimeout?.Invoke(this, e);
          }
          catch (Exception exc) {
             Trace.WriteLine(exc);
@@ -328,7 +302,7 @@ namespace ODModelBuilderTF
                "--eval_images_dir".ToPython(), Opt.EvalImagesFolder.ToPython(),
                "--model_dir".ToPython(), Opt.TrainFolder.ToPython(),
                "--annotations_dir".ToPython(), annotationsDir.ToPython(),
-               "--checkpoint_every_n".ToPython(), Opt.CheckPointEvery.ToString().ToPython()
+               "--checkpoint_every_n".ToPython(), (Opt.CheckPointEvery != null ? Opt.CheckPointEvery.Value : int.MaxValue).ToString().ToPython()
             };
             if (Opt.BatchSize != null)
                argv.AddRange(new[] { "--batch_size".ToPython(), Opt.BatchSize.Value.ToString().ToPython() });
@@ -349,6 +323,7 @@ namespace ODModelBuilderTF
                if (!Directory.Exists(annotationsDir))
                   Directory.CreateDirectory(annotationsDir);
                // Train action
+               double? minTotalLoss = null;
                var train = new Action<dynamic>(unused_argv =>
                {
                   // Step callback action
@@ -358,6 +333,13 @@ namespace ODModelBuilderTF
                      TrainStepEventArgs data;
                      using (Py.GIL())
                         data = new TrainStepEventArgs((int)args.global_step, (double)args.per_step_time, (double)args.loss);
+                     // Check if loss is decreased to generate a new checkpoint
+                     if (Opt.CheckPointEvery == null && minTotalLoss == null || data.TotalLoss < minTotalLoss.Value * 0.9) {
+                        if (minTotalLoss != null)
+                           data.CreateCheckpoint = true;
+                        minTotalLoss = data.TotalLoss;
+                        Trace.WriteLine($"Auto checkpoint with total loss {data.TotalLoss:N3}");
+                     }
                      // Call the event function
                      OnTrainStep(data);
                      if (data.Cancel)
@@ -370,8 +352,11 @@ namespace ODModelBuilderTF
                   });
                   // Online evaluation task
                   Task evalTask = null;
+                  // Export task
+                  Task exportTask = Task.CompletedTask;
+                  var exportCancel = new CancellationTokenSource();
                   // Checkpoint ready signal
-                  var checkPointReady = new AutoResetEvent(true);
+                  var checkPointReady = new ManualResetEvent(false);
                   // Checkpoint ready callback function
                   var checkpointCallback = new Action<dynamic>(args =>
                   {
@@ -391,10 +376,28 @@ namespace ODModelBuilderTF
                         try {
                            // Create the continuous evaluation task
                            if (evalTask == null || evalTask.IsCompleted)
-                              evalTask = EvaluationTask(checkPointReady, cancellation.Token);
+                              evalTask = Task.Run(() => EvaluateContinuously(checkPointReady, cancellation.Token));
                            // Or just signal to start a new evaluation if the task was already active
-                           else
+                           else {
+                              if (!Opt.EnableParallel) {
+                                 while (checkPointReady.WaitOne(250)) {
+                                    cancellation.Token.ThrowIfCancellationRequested();
+                                    Thread.Sleep(250);
+                                    cancellation.Token.ThrowIfCancellationRequested();
+                                 }
+                              }
                               checkPointReady.Set();
+                           }
+                           var currentExportTask = exportTask;
+                           exportCancel.Cancel();
+                           exportCancel = CancellationTokenSource.CreateLinkedTokenSource(cancellation.Token);
+                           exportTask = Task.Run(() =>
+                           {
+                              currentExportTask.Wait();
+                              ExportLatestCheckpoint(exportCancel.Token);
+                           }, exportCancel.Token);
+                           if (!Opt.EnableParallel)
+                              exportTask.Wait(cancellation.Token);
                         }
                         catch (OperationCanceledException) { }
                      }
@@ -451,9 +454,14 @@ namespace ODModelBuilderTF
          /// </summary>
          public int? BatchSize { get; set; } = null;
          /// <summary>
-         /// Number of steps between checkpoint generations
+         /// Number of steps between checkpoint generations.
+         /// Automatic checkpoint generation if not set.
          /// </summary>
-         public int CheckPointEvery { get; set; } = 1000;
+         public int? CheckPointEvery { get; set; } = null;
+         /// <summary>
+         /// Enable parallel execution of train / evaluation / export
+         /// </summary>
+         public bool EnableParallel { get; set; } = false;
          /// <summary>
          /// Folder containing the images and annotation labels for the evaluation
          /// </summary>
