@@ -23,8 +23,9 @@ namespace ODModelBuilderTF_Con
          OD.Init(true, true, virtualEnvDir);
          var trainer = new Trainer(new Trainer.Options
          {
-            BatchSize = 16,
-            CheckPointEvery = null, //@@@100,//@@@1000,
+            BatchSize = 20,
+            CheckpointEvery = null, //@@@100,//@@@1000,
+            CheckpointForceThreashold = 0.95,
             EvalImagesFolder = @"D:\ObjectDetection\caz\TensorFlow\images\eval",
             ExportFolder = @"D:\ObjectDetection\caz\TensorFlow\exported-model",
             ModelType = ModelTypes.SSD_MobileNet_V2_320x320,

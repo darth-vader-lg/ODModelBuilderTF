@@ -301,9 +301,10 @@ namespace ODModelBuilderTF
                "--train_images_dir".ToPython(), Opt.TrainImagesFolder.ToPython(),
                "--eval_images_dir".ToPython(), Opt.EvalImagesFolder.ToPython(),
                "--model_dir".ToPython(), Opt.TrainFolder.ToPython(),
-               "--annotations_dir".ToPython(), annotationsDir.ToPython(),
-               "--checkpoint_every_n".ToPython(), (Opt.CheckPointEvery != null ? Opt.CheckPointEvery.Value : int.MaxValue).ToString().ToPython()
+               "--annotations_dir".ToPython(), annotationsDir.ToPython()
             };
+            if (Opt.CheckpointEvery != null)
+               argv.AddRange(new[] { "--checkpoint_every_n".ToPython(), Opt.CheckpointEvery.Value.ToString().ToPython() });
             if (Opt.BatchSize != null)
                argv.AddRange(new[] { "--batch_size".ToPython(), Opt.BatchSize.Value.ToString().ToPython() });
             if (Opt.NumTrainSteps != null)
@@ -333,12 +334,11 @@ namespace ODModelBuilderTF
                      TrainStepEventArgs data;
                      using (Py.GIL())
                         data = new TrainStepEventArgs((int)args.global_step, (double)args.per_step_time, (double)args.loss);
-                     // Check if loss is decreased to generate a new checkpoint
-                     if (Opt.CheckPointEvery == null && minTotalLoss == null || data.TotalLoss < minTotalLoss.Value * 0.9) {
+                     // Check if loss is decreased enough for generating a new checkpoint
+                     if (Opt.CheckpointForceThreashold != null && (minTotalLoss == null || data.TotalLoss < minTotalLoss.Value * Opt.CheckpointForceThreashold.Value)) {
                         if (minTotalLoss != null)
                            data.CreateCheckpoint = true;
                         minTotalLoss = data.TotalLoss;
-                        Trace.WriteLine($"Auto checkpoint with total loss {data.TotalLoss:N3}");
                      }
                      // Call the event function
                      OnTrainStep(data);
@@ -349,6 +349,8 @@ namespace ODModelBuilderTF
                         args.cancel = cancellation.IsCancellationRequested;
                         args.create_checkpoint = data.CreateCheckpoint;
                      }
+                     if (data.CreateCheckpoint)
+                        Trace.WriteLine($"Checkpoint generated with total loss {data.TotalLoss:N3}");
                   });
                   // Online evaluation task
                   Task evalTask = null;
@@ -455,9 +457,13 @@ namespace ODModelBuilderTF
          public int? BatchSize { get; set; } = null;
          /// <summary>
          /// Number of steps between checkpoint generations.
-         /// Automatic checkpoint generation if not set.
          /// </summary>
-         public int? CheckPointEvery { get; set; } = null;
+         public int? CheckpointEvery { get; set; } = null;
+         /// <summary>
+         /// Forced checkpoint generation threshold.
+         /// An automatic checkpoint it's generated if the current step loss is less than previous * thr
+         /// </summary>
+         public double? CheckpointForceThreashold { get; set; } = null;
          /// <summary>
          /// Enable parallel execution of train / evaluation / export
          /// </summary>
