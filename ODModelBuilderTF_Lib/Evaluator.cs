@@ -134,7 +134,7 @@ namespace ODModelBuilderTF
       /// Evaluation ready function
       /// </summary>
       /// <param name="e">Evaluation arguments</param>
-      protected void OnEvaluation(EvaluationEventArgs e)
+      protected virtual void OnEvaluation(EvaluationEventArgs e)
       {
          try {
             Evaluation?.Invoke(this, e);
@@ -147,7 +147,7 @@ namespace ODModelBuilderTF
       /// Evaluation timeout function
       /// </summary>
       /// <param name="e">Evaluation timeout arguments</param>
-      protected void OnEvaluationTimeout(EvaluationTimeoutEventArgs e)
+      protected virtual void OnEvaluationTimeout(EvaluationTimeoutEventArgs e)
       {
          try {
             EvaluationTimeout?.Invoke(this, e);
@@ -176,7 +176,7 @@ namespace ODModelBuilderTF
          /// </summary>
          public double TimeoutInterval { get; set; } = 3600;
          /// <summary>
-         /// Folder in witch the train will be performed
+         /// Folder containing the train checkpoints
          /// </summary>
          public string TrainFolder { get; set; } = null;
          /// <summary>

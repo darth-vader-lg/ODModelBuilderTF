@@ -23,8 +23,9 @@ namespace ODModelBuilderTF_Con
          var trainer = new Trainer(new Trainer.Options
          {
             BatchSize = 8,
-            CheckPointEvery = 50,//@@@1000,
+            CheckPointEvery = 100,//@@@1000,
             EvalImagesFolder = @"D:\ObjectDetection\caz\TensorFlow\images\eval",
+            ExportFolder = @"D:\ObjectDetection\caz\TensorFlow\exported-model",
             ModelType = ModelTypes.SSD_MobileNet_V2_320x320,
             NumTrainSteps = 50000,
             TensorBoardPort = 8080,

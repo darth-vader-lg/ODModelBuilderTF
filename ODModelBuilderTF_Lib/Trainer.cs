@@ -22,6 +22,10 @@ namespace ODModelBuilderTF
       #endregion
       #region Events
       /// <summary>
+      /// Checkpoint event
+      /// </summary>
+      public event CheckpointEventHandler Checkpoint;
+      /// <summary>
       /// Evaluation ready event
       /// </summary>
       public event EvaluationEventHandler Evaluation;
@@ -30,13 +34,21 @@ namespace ODModelBuilderTF
       /// </summary>
       public event EvaluationTimeoutEventHandler EvaluationTimeout;
       /// <summary>
+      /// Frozen graph exported event
+      /// </summary>
+      public event ExportEventHandler FrozenGraphExported;
+      /// <summary>
+      /// Onnx exported event
+      /// </summary>
+      public event ExportEventHandler OnnxExported;
+      /// <summary>
+      /// Saved model exported event
+      /// </summary>
+      public event ExportEventHandler SavedModelExported;
+      /// <summary>
       /// Train step event
       /// </summary>
       public event TrainStepEventHandler TrainStep;
-      /// <summary>
-      /// Checkpoint event
-      /// </summary>
-      public event CheckpointEventHandler Checkpoint;
       #endregion
       #region Methods
       /// <summary>
@@ -53,11 +65,12 @@ namespace ODModelBuilderTF
       /// </summary>
       /// <param name="checkPointReady">New check point ready signal</param>
       /// <param name="cancel">Cancellation token</param>
-      /// <returns></returns>
+      /// <returns>The task</returns>
       private Task EvaluationTask(EventWaitHandle checkPointReady, CancellationToken cancel)
       {
          return Task.Run(() =>
          {
+            var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancel);
             // Evaluation options
             var evaluator = new Evaluator(new Evaluator.Options
             {
@@ -70,7 +83,7 @@ namespace ODModelBuilderTF
             {
                try {
                   // Check if cancellation requested
-                  cancel.ThrowIfCancellationRequested();
+                  cancellation.Token.ThrowIfCancellationRequested();
                   // Print metrics
                   Trace.WriteLine($"Evaluation done."); //@@@
                   Trace.WriteLine(new string('=', 80));
@@ -79,12 +92,18 @@ namespace ODModelBuilderTF
                   Trace.WriteLine(new string('=', 80));
                   // Wait for the next checkpoint
                   while (!checkPointReady.WaitOne(500))
-                     cancel.ThrowIfCancellationRequested();
-                  cancel.ThrowIfCancellationRequested();
+                     cancellation.Token.ThrowIfCancellationRequested();
+                  cancellation.Token.ThrowIfCancellationRequested();
                   // Call the evaluation ready function
                   OnEvaluation(e);
+                  if (e.Cancel)
+                     cancellation.Cancel();
+                  cancellation.Token.ThrowIfCancellationRequested();
+                  // Export the model
+                  ExportTask(cancellation.Token).Wait(cancellation.Token);
                }
-               catch (Exception) {
+               catch (Exception exc) {
+                  Trace.WriteLine(exc);//@@@
                   e.Cancel = true;
                }
             };
@@ -104,10 +123,86 @@ namespace ODModelBuilderTF
          }, cancel);
       }
       /// <summary>
+      /// Export task
+      /// </summary>
+      /// <param name="cancel">Cancellation token</param>
+      /// <returns>The task</returns>
+      private Task ExportTask(CancellationToken cancel)
+      {
+         return Task.Run(() =>
+         {
+            // Check for arguments
+            if (string.IsNullOrWhiteSpace(Opt.ExportFolder))
+               throw new ArgumentException("Undefined export folder");
+            var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancel);
+            // Evaluation options
+            var exporter = new Exporter(new Exporter.Options
+            {
+               FrozenGraphFileName = Opt.FrozenGraphFileName,
+               OnnxModelFileName = Opt.OnnxModelFileName,
+               OutputFolder = Opt.ExportFolder,
+               TrainFolder = Opt.TrainFolder
+            });
+            // Saved model exported event
+            exporter.SavedModelExported += (sender, e) =>
+            {
+               try {
+                  // Check if cancellation requested
+                  cancellation.Token.ThrowIfCancellationRequested();
+                  Trace.WriteLine($"Saved model exported in the folder {exporter.Opt.OutputFolder}."); //@@@
+                  // Call the exported saved_model function
+                  OnExportedSavedModel(e);
+                  if (e.Cancel)
+                     cancellation.Cancel();
+                  cancellation.Token.ThrowIfCancellationRequested();
+               }
+               catch (Exception) {
+                  e.Cancel = true;
+               }
+            };
+            // Frozen graph exported event
+            exporter.FrozenGraphExported += (sender, e) =>
+            {
+               try {
+                  // Check if cancellation requested
+                  cancellation.Token.ThrowIfCancellationRequested();
+                  Trace.WriteLine($"Frozen graph exported in {Path.Combine(exporter.Opt.OutputFolder, exporter.Opt.FrozenGraphFileName)}."); //@@@
+                  // Call the exported frozen graph function
+                  OnExportedFrozenGraph(e);
+                  if (e.Cancel)
+                     cancellation.Cancel();
+                  cancellation.Token.ThrowIfCancellationRequested();
+               }
+               catch (Exception) {
+                  e.Cancel = true;
+               }
+            };
+            // Frozen graph exported event
+            exporter.OnnxExported += (sender, e) =>
+            {
+               try {
+                  // Check if cancellation requested
+                  cancellation.Token.ThrowIfCancellationRequested();
+                  Trace.WriteLine($"Onnx model exported in {Path.Combine(exporter.Opt.OutputFolder, exporter.Opt.OnnxModelFileName)}."); //@@@
+                  // Call the exported frozen graph function
+                  OnExportedOnnx(e);
+                  if (e.Cancel)
+                     cancellation.Cancel();
+                  cancellation.Token.ThrowIfCancellationRequested();
+               }
+               catch (Exception) {
+                  e.Cancel = true;
+               }
+            };
+            // Start the export
+            exporter.Export(cancel);
+         }, cancel);
+      }
+      /// <summary>
       /// Checkpoint function
       /// </summary>
       /// <param name="e">Checkpoint arguments</param>
-      protected void OnCheckpoint(CheckpointEventArgs e)
+      protected virtual void OnCheckpoint(CheckpointEventArgs e)
       {
          try {
             Checkpoint?.Invoke(this, e);
@@ -120,7 +215,7 @@ namespace ODModelBuilderTF
       /// Evaluation ready function
       /// </summary>
       /// <param name="e">Evaluation arguments</param>
-      protected void OnEvaluation(EvaluationEventArgs e)
+      protected virtual void OnEvaluation(EvaluationEventArgs e)
       {
          try {
             Evaluation?.Invoke(this, e);
@@ -133,7 +228,7 @@ namespace ODModelBuilderTF
       /// Evaluation timeout function
       /// </summary>
       /// <param name="e">Evaluation timeout arguments</param>
-      protected void OnEvaluationTimeout(EvaluationTimeoutEventArgs e)
+      protected virtual void OnEvaluationTimeout(EvaluationTimeoutEventArgs e)
       {
          try {
             EvaluationTimeout?.Invoke(this, e);
@@ -143,10 +238,49 @@ namespace ODModelBuilderTF
          }
       }
       /// <summary>
+      /// Frozen graph exported function
+      /// </summary>
+      /// <param name="e">Export arguments</param>
+      protected virtual void OnExportedFrozenGraph(ExportEventArgs data)
+      {
+         try {
+            FrozenGraphExported?.Invoke(this, data);
+         }
+         catch (Exception exc) {
+            Trace.WriteLine(exc);
+         }
+      }
+      /// <summary>
+      /// Onnx exported function
+      /// </summary>
+      /// <param name="e">Export arguments</param>
+      protected virtual void OnExportedOnnx(ExportEventArgs data)
+      {
+         try {
+            OnnxExported?.Invoke(this, data);
+         }
+         catch (Exception exc) {
+            Trace.WriteLine(exc);
+         }
+      }
+      /// <summary>
+      /// SavedModel exported function
+      /// </summary>
+      /// <param name="e">Export arguments</param>
+      protected virtual void OnExportedSavedModel(ExportEventArgs data)
+      {
+         try {
+            SavedModelExported?.Invoke(this, data);
+         }
+         catch (Exception exc) {
+            Trace.WriteLine(exc);
+         }
+      }
+      /// <summary>
       /// Train step function
       /// </summary>
       /// <param name="e">Train step arguments</param>
-      protected void OnTrainStep(TrainStepEventArgs e)
+      protected virtual void OnTrainStep(TrainStepEventArgs e)
       {
          try {
             TrainStep?.Invoke(this, e);
@@ -237,7 +371,7 @@ namespace ODModelBuilderTF
                   // Online evaluation task
                   Task evalTask = null;
                   // Checkpoint ready signal
-                  var checkPointReady = new AutoResetEvent(false);
+                  var checkPointReady = new AutoResetEvent(true);
                   // Checkpoint ready callback function
                   var checkpointCallback = new Action<dynamic>(args =>
                   {
@@ -256,7 +390,7 @@ namespace ODModelBuilderTF
                      if (!cancellation.IsCancellationRequested) {
                         try {
                            // Create the continuous evaluation task
-                           if (evalTask == null)
+                           if (evalTask == null || evalTask.IsCompleted)
                               evalTask = EvaluationTask(checkPointReady, cancellation.Token);
                            // Or just signal to start a new evaluation if the task was already active
                            else
@@ -325,6 +459,14 @@ namespace ODModelBuilderTF
          /// </summary>
          public string EvalImagesFolder { get; set; } = null;
          /// <summary>
+         /// Folder for model export
+         /// </summary>
+         public string ExportFolder { get; set; } = null;
+         /// <summary>
+         /// Frozen graph file name in the export folder
+         /// </summary>
+         public string FrozenGraphFileName { get; set; } = null;
+         /// <summary>
          /// Base model type
          /// </summary>
          public ModelTypes ModelType { get; set; } = ModelTypes.SSD_MobileNet_V2_320x320;
@@ -333,6 +475,10 @@ namespace ODModelBuilderTF
          /// It will be used the one defined in the pipeline config if not specified here.
          /// </summary>
          public int? NumTrainSteps { get; set; } = null;
+         /// <summary>
+         /// Onnx model file name in the export folder
+         /// </summary>
+         public string OnnxModelFileName { get; set; } = null;
          /// <summary>
          /// The port for the tensorboard server
          /// </summary>
