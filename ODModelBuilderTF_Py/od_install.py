@@ -10,15 +10,33 @@ except: pass
 try:    from    utilities import *
 except: pass
 
-def install_object_detection(no_cache=True, no_deps=True, custom_tf_dir=None):
+def install_object_detection(no_cache=True, custom_tf_dir=None):
     """
     Install a well known environment.
     """
     install_extra_args = []
     if (no_cache):
         install_extra_args.append('--no-cache')
-    if (no_deps):
-        install_extra_args.append('--no-deps')
+    install_extra_args.append('-c')
+    install_extra_args.append(os.path.join(os.path.dirname(__file__), 'constraints.txt'))
+
+    # Install pycocotools. It must be installed as first for some problems building on Windows.
+    if (not get_package_info('pycocotools').name):
+        install('pycocotools', install_extra_args)
+        # For some reasons the package doesn't function if installed by wheel on Windows.
+        # So temporary uninstall wheel
+        reinstall_wheel = False
+        if (get_package_info('wheel').name):
+            uninstall('wheel')
+            reinstall_wheel = True
+        if (not get_package_info('pycocotools').name):
+            raise Exception('Error installing pycocotools')
+        # Reinstall wheel
+        if (reinstall_wheel):
+            install('wheel', install_extra_args)
+    else:
+        print('pycocotools is already installed')
+
     # Install TensorFlow
     is_installed = False
     try:
@@ -50,7 +68,7 @@ def install_object_detection(no_cache=True, no_deps=True, custom_tf_dir=None):
         print(f'TensorFlow {Cfg.tensorflow_version} is already installed')
     # Install pygit2
     if (not get_package_info('pygit2').name):
-        install('pygit2==1.5.0', install_extra_args)
+        install('pygit2', install_extra_args)
     else:
         print('pygit2 is already installed')
     import pygit2
@@ -82,6 +100,7 @@ def install_object_detection(no_cache=True, no_deps=True, custom_tf_dir=None):
     except: pass
     # Install the TensorFlow models
     if (not is_installed):
+        # Install pygit2
         try:
             repo = pygit2.Repository(od_api_dir)
         except:
@@ -124,18 +143,7 @@ def install_object_detection(no_cache=True, no_deps=True, custom_tf_dir=None):
         # Install the object detection packages
         print(f'Installing the object detection api.')
         shutil.copy2('object_detection/packages/tf2/setup.py', '.')
-        with open('./setup.py', 'r') as f:
-            lines = f.readlines()
-            for i in range(len(lines)):
-                if ('tf-models-official' in lines[i]):
-                    if (tf_comparing_version.lstrip().startswith('2.4')):
-                        lines[i] = str(lines[i]).replace('tf-models-official', 'tf-models-official==2.4.0')
-        with open('./setup.py', 'w') as f:
-            f.writelines(lines)
-        setup_args = install_extra_args
-        #@@@if (od_api_dir == Cfg.od_api_git_repo):
-        #@@@    setup_args.append('--editable')
-        install('.', setup_args)
+        install('.', install_extra_args)
         # Uninstall the dataclasses package installed erroneusly (incompatible) for python >=3.7 by tf-models-official
         try:
             import pkg_resources, importlib
@@ -157,49 +165,47 @@ def install_object_detection(no_cache=True, no_deps=True, custom_tf_dir=None):
         if (not path in sys.path):
             sys.path.append(path)
     # Directory of the onnx converter and commit id
-    if (os.path.isdir(Cfg.tf2onnx_git_repo)):
-        tf2onnx_dir = Cfg.tf2onnx_git_repo
-    else:
-        tf2onnx_dir = os.path.join(tempfile.gettempdir(), 'tensorflow-onnx-' + Cfg.tf2onnx_git_ref.replace('/', '_'))
-    # Install the onnx converter
-    is_installed = False
-    try:
-        if (get_package_info('tensorflow-onnx').version):
-            repo = pygit2.Repository(tf2onnx_dir)
-            if ((od_api_dir == Cfg.od_api_git_repo) or (repo.head.target.hex == Cfg.tf2onnx_git_ref)):
-                is_installed = True
-    except: pass
-    # Install the onnx converter
-    if (not is_installed):
+    if (Cfg.tf2onnx_git_repo and Cfg.tf2onnx_git_ref):
+        if (os.path.isdir(Cfg.tf2onnx_git_repo)):
+            tf2onnx_dir = Cfg.tf2onnx_git_repo
+        else:
+            tf2onnx_dir = os.path.join(tempfile.gettempdir(), 'tensorflow-onnx-' + Cfg.tf2onnx_git_ref.replace('/', '_'))
+        # Install the onnx converter
+        is_installed = False
         try:
-            repo = pygit2.Repository(tf2onnx_dir)
-        except:
-            # Create the callback for the progress
-            callbacks = GitCallbacks();
-            # Clone the TensorFlow models repository
-            print('Cloning the onnx converter repository')
-            pygit2.clone_repository('https://github.com/onnx/tensorflow-onnx.git', tf2onnx_dir, callbacks = callbacks)
-            print('Onnx converter repository cloned')
-            repo = pygit2.Repository(tf2onnx_dir)
-        # Checkout the well known commit
-        print(f'Checkout of the onnx converter repository at {Cfg.tf2onnx_git_ref}')
-        (commit, reference) = repo.resolve_refish(Cfg.tf2onnx_git_ref)
-        try:
-            repo.checkout_tree(commit)
+            if (get_package_info('tensorflow-onnx').version):
+                repo = pygit2.Repository(tf2onnx_dir)
+                if ((od_api_dir == Cfg.od_api_git_repo) or (repo.head.target.hex == Cfg.tf2onnx_git_ref)):
+                    is_installed = True
         except: pass
-        repo.reset(commit.oid, pygit2.GIT_RESET_HARD if tf2onnx_dir != Cfg.tf2onnx_git_repo else pygit2.GIT_RESET_SOFT)
-        # Move to the onnx converter dir
-        currentDir = os.getcwd()
-        os.chdir(tf2onnx_dir)
-        # Install the converter
-        setup_args = install_extra_args
-        #@@@if (tf2onnx_dir == Cfg.tf2onnx_git_repo):
-        #@@@    setup_args.append('--editable')
-        install('.', setup_args)  # TODO: Install the package from GitHub and try with release 1.9.0
-        # Return to the original directory
-        os.chdir(currentDir)
-    else:
-        print(f'Onnx converter {Cfg.tf2onnx_git_ref} is already installed')
+        # Install the onnx converter
+        if (not is_installed):
+            try:
+                repo = pygit2.Repository(tf2onnx_dir)
+            except:
+                # Create the callback for the progress
+                callbacks = GitCallbacks();
+                # Clone the TensorFlow models repository
+                print('Cloning the onnx converter repository')
+                pygit2.clone_repository('https://github.com/onnx/tensorflow-onnx.git', tf2onnx_dir, callbacks = callbacks)
+                print('Onnx converter repository cloned')
+                repo = pygit2.Repository(tf2onnx_dir)
+            # Checkout the well known commit
+            print(f'Checkout of the onnx converter repository at {Cfg.tf2onnx_git_ref}')
+            (commit, reference) = repo.resolve_refish(Cfg.tf2onnx_git_ref)
+            try:
+                repo.checkout_tree(commit)
+            except: pass
+            repo.reset(commit.oid, pygit2.GIT_RESET_HARD if tf2onnx_dir != Cfg.tf2onnx_git_repo else pygit2.GIT_RESET_SOFT)
+            # Move to the onnx converter dir
+            currentDir = os.getcwd()
+            os.chdir(tf2onnx_dir)
+            # Install the converter
+            install('.', install_extra_args)  # TODO: Install the package from GitHub and try with release 1.9.0
+            # Return to the original directory
+            os.chdir(currentDir)
+        else:
+            print(f'Onnx converter {Cfg.tf2onnx_git_ref} is already installed')
 
     print('Installation ok.')
 

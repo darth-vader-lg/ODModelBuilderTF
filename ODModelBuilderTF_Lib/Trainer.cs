@@ -76,19 +76,11 @@ namespace ODModelBuilderTF
             try {
                // Check if cancellation requested
                cancellation.Token.ThrowIfCancellationRequested();
-               // Print metrics
-               Trace.WriteLine($"Evaluation done."); //@@@
-               Trace.WriteLine(new string('=', 80));
-               foreach (var m in e.Metrics)
-                  Trace.WriteLine($"{m.Key}\t\t\t{m.Value}");
-               Trace.WriteLine(new string('=', 80));
                // Call the evaluation ready function
                OnEvaluation(e);
                if (e.Cancel)
                   cancellation.Cancel();
                cancellation.Token.ThrowIfCancellationRequested();
-               // Export the model
-               //@@@ExportLatestCheckpoint(cancellation.Token);
             }
             catch (OperationCanceledException) {
                e.Cancel = true;
@@ -111,7 +103,6 @@ namespace ODModelBuilderTF
          };
          // Start the evaluation
          evaluator.Evaluate(cancellation.Token);
-         Trace.WriteLine("Evaluation exited!!!!!!!!!!!!!!!!!!!!");//@@@
       }
       /// <summary>
       /// Export the latest checkpoint
@@ -137,7 +128,6 @@ namespace ODModelBuilderTF
             try {
                // Check if cancellation requested
                cancellation.Token.ThrowIfCancellationRequested();
-               Trace.WriteLine($"Saved model exported in the folder {exporter.Opt.OutputFolder}."); //@@@
                // Call the exported saved_model function
                OnExportedSavedModel(e);
                if (e.Cancel)
@@ -154,7 +144,6 @@ namespace ODModelBuilderTF
             try {
                // Check if cancellation requested
                cancellation.Token.ThrowIfCancellationRequested();
-               Trace.WriteLine($"Frozen graph exported in {Path.Combine(exporter.Opt.OutputFolder, exporter.Opt.FrozenGraphFileName)}."); //@@@
                // Call the exported frozen graph function
                OnExportedFrozenGraph(e);
                if (e.Cancel)
@@ -171,7 +160,6 @@ namespace ODModelBuilderTF
             try {
                // Check if cancellation requested
                cancellation.Token.ThrowIfCancellationRequested();
-               Trace.WriteLine($"Onnx model exported in {Path.Combine(exporter.Opt.OutputFolder, exporter.Opt.OnnxModelFileName)}."); //@@@
                // Call the exported frozen graph function
                OnExportedOnnx(e);
                if (e.Cancel)

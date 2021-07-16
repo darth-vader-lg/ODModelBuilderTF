@@ -67,6 +67,7 @@ def install_virtual_environment(env_name: str=env_name, no_cache=True, no_deps=T
             else:
                 sys.executable = os.path.join(env_name, script_dir, executable_name)
         paths = [
+            os.path.abspath(os.path.join(env_name, 'DLLs')),
             os.path.abspath(os.path.join(env_name, 'Lib', 'site-packages')),
             os.path.abspath(os.path.join(env_name, 'lib', 'python3.7', 'site-packages')),
             os.path.abspath(os.path.join(env_name, 'Scripts')),
@@ -74,12 +75,20 @@ def install_virtual_environment(env_name: str=env_name, no_cache=True, no_deps=T
             os.path.abspath(os.path.join(env_name)),
             ]
         for path in paths:
-            if (not path in sys.path):
+            if (not path.lower() in [lc.lower() for lc in sys.path]):
                 sys.path.insert(0, path)
-    # Installation of the requirements
-    from utilities import execute_script, install, get_package_info
+    # Base packages installation function
+    from utilities import install, get_package_info
+    base_packages_installed = False
+    def _install_base_packages():
+        nonlocal base_packages_installed
+        if (base_packages_installed):
+            return
+        install('pip', ['--upgrade', '-c', 'constraints.txt'])
+        base_packages_installed = True
+    # Check of missing packages
     missing = check_requirements(requirements='requirements.txt', no_deps=no_deps) if (os.path.isfile('requirements.txt') and not no_requirements) else []
-    pip_upgraded = False
+    # Installation of the requirements
     if (force_install_requirements or len(missing) > 0):
         if (len(missing) > 0):
             print('Missing requirements:')
@@ -87,17 +96,14 @@ def install_virtual_environment(env_name: str=env_name, no_cache=True, no_deps=T
                 print(r)
         print('Installing the requirements.')
         try:
-            if (not pip_upgraded):
-                execute_script(['-m', 'pip', 'install', '--upgrade', 'pip'])
-                execute_script(['-m', 'pip', 'install', '--upgrade', 'setuptools'])
-                pip_upgraded = True
-            install_args = ['-m', 'pip', 'install', '--no-deps']
+            _install_base_packages()
+            install_args = []
             if (no_cache):
                 install_args.append('--no-cache')
             if (no_deps):
                 install_args.append('--no-deps')
-            install_args.extend(['-r', 'requirements.txt'])
-            execute_script(install_args)
+            install_args.extend(['-r', 'requirements.txt', '-c', 'constraints.txt'])
+            install(None, install_args)
         except subprocess.CalledProcessError as exc:
             print ("Error!!!")
             print(exc)
@@ -106,12 +112,9 @@ def install_virtual_environment(env_name: str=env_name, no_cache=True, no_deps=T
     if (len(check_requirements(requirements=['object-detection'], no_deps=True)) > 0):
         print('Installing the object detection API')
         try:
-            if (not pip_upgraded):
-                execute_script(['-m', 'pip', 'install', '--upgrade', 'pip'])
-                execute_script(['-m', 'pip', 'install', '--upgrade', 'setuptools'])
-                pip_upgraded = True
+            _install_base_packages()
             from od_install import install_object_detection
-            install_object_detection(no_cache=no_cache, no_deps=no_deps, custom_tf_dir=custom_tf_dir)
+            install_object_detection(no_cache=no_cache, custom_tf_dir=custom_tf_dir)
         except subprocess.CalledProcessError as exc:
             print("Error! Couldn't install object detection api.")
             print(exc)

@@ -18,15 +18,13 @@ def execute_subprocess(cmd: []):
     Keyword arguments:
     cmd     -- the process to execute with its parameters
     """
-    env = {
-        **os.environ, 'PATH':
-        os.path.dirname(sys.executable) + os.pathsep +
-        ((os.path.dirname(__file__) + os.pathsep) if '__file__' in globals() else '') +
-        os.environ['PATH']}
+    env = { **os.environ, 'PATH': os.pathsep.join(sys.path) + os.pathsep + os.environ['PATH'] }
     shell = 'CREATE_NO_WINDOW' in dir(subprocess)
     creationflags = subprocess.CREATE_NO_WINDOW if shell else 0
-    popen = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, universal_newlines=True,shell=shell,creationflags=creationflags)
+    popen = subprocess.Popen(cmd, env=env, cwd=os.getcwd(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,shell=shell,creationflags=creationflags)
     for stdout_line in iter(popen.stdout.readline, ""):
+        yield stdout_line 
+    for stdout_line in iter(popen.stderr.readline, ""):
         yield stdout_line 
     popen.stdout.close()
     return_code = popen.wait()
@@ -99,7 +97,8 @@ def install(package: str, extra_args: []):
     script_args = ['-m', 'pip', 'install']
     if (extra_args):
         script_args.extend(extra_args)
-    script_args.append(package)
+    if (package):
+        script_args.append(package)
     execute_script(script_args)
 
 def is_colab():

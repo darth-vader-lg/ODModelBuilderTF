@@ -30,6 +30,6 @@ if (-not(Test-Path -PathType Container $scriptRoot\env)) {
 # Set the path to the python environment
 $env:Path = "$scriptRoot\env;$scriptRoot\env\Scripts;$scriptRoot\env\DLLs;$scriptRoot\env\Lib;$scriptRoot\env\Lib\site-packages;$env:Path"
 # Install the environment
-python install_virtual_environment.py --custom-tf-dir "$env:USERPROFILE\Packages"
+python.exe install_virtual_environment.py --no-requirements --custom-tf-dir "$env:USERPROFILE\Packages" #@@@ Remove the no-requirements switch
 if ($LASTEXITCODE) { Exit $LASTEXITCODE }
 Exit 0

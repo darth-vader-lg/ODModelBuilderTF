@@ -1,8 +1,6 @@
 ﻿using ODModelBuilderTF;
 using System;
 using System.Diagnostics;
-using System.IO;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using OD = ODModelBuilderTF.ODModelBuilderTF;
@@ -14,22 +12,22 @@ namespace ODModelBuilderTF_Con
       static async Task Main(string[] args)
       {
          Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
-         var assemblyName = Assembly.GetEntryAssembly().GetName();
 #if DEBUG
-         var virtualEnvDir = @"..\..\..\..\ODModelBuilderTF_Py\env";
+         var virtualEnvPath = @"..\..\..\..\ODModelBuilderTF_Py\env";
 #else
-         var virtualEnvDir = Path.Combine(Path.GetTempPath(), $"{assemblyName.Name}-{assemblyName.Version}");
+         var virtualEnvPath = default(string);
 #endif
-         OD.Init(true, true, virtualEnvDir);
+         OD.Init(virtualEnvPath: virtualEnvPath);
          var trainer = new Trainer(new Trainer.Options
          {
             BatchSize = 20,
-            CheckpointEvery = null, //@@@100,//@@@1000,
+            CheckpointEvery = int.MaxValue,
             CheckpointForceThreashold = 0.95,
             EvalImagesFolder = @"D:\ObjectDetection\caz\TensorFlow\images\eval",
             ExportFolder = @"D:\ObjectDetection\caz\TensorFlow\exported-model",
             ModelType = ModelTypes.SSD_MobileNet_V2_320x320,
             NumTrainSteps = 50000,
+            OnnxModelFileName = null, //"Model.onnx",
             TensorBoardPort = 8080,
             TrainFolder = @"D:\ObjectDetection\caz\TensorFlow\trained-model",
             TrainImagesFolder = @"D:\ObjectDetection\caz\TensorFlow\images\train",

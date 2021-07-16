@@ -73,152 +73,151 @@ namespace ODModelBuilderTF
       /// <param name="redirectStderr">Redirect the standard error</param>
       /// <param name="virtualEnvPath">Path of the virtual environment</param>
       /// <param name="fullPython">Enable the installation of the full python instead of the embeddable one</param>
-      public static void Init(bool redirectStdout, bool redirectStderr, string virtualEnvPath = null, bool fullPython = true)
+      public static void Init(bool redirectStdout = true, bool redirectStderr = true, string virtualEnvPath = default, bool fullPython = true)
       {
+         // Virtual environment's full path
+         var assemblyName = Assembly.GetExecutingAssembly().GetName();
+         virtualEnvPath = string.IsNullOrEmpty(virtualEnvPath) ? Path.Combine(Path.GetTempPath(), $"{assemblyName.Name}-{assemblyName.Version}") : Path.GetFullPath(virtualEnvPath);
          // Create a mutex to avoid overlapped initializations
-         virtualEnvPath = string.IsNullOrEmpty(virtualEnvPath) ? null : Path.GetFullPath(virtualEnvPath);
-         using var mutex = new Mutex(true, !string.IsNullOrEmpty(virtualEnvPath) ? virtualEnvPath.Replace("\\", "_").Replace(":", "-") : Assembly.GetEntryAssembly().GetName().Name);
+         using var mutex = new Mutex(true, virtualEnvPath.Replace("\\", "_").Replace(":", "-"));
          if (Initialized)
             return;
-         // Check if it's required a virtual environment
-         if (!string.IsNullOrEmpty(virtualEnvPath)) {
-            // Name of the downloaded Python zip file and the get pip script
-            var pythonZip = Path.Combine(virtualEnvPath, "python.zip");
-            var getPipScript = Path.Combine(virtualEnvPath, "get-pip.py");
-            // Check if the Assembly contains the environment
-            var zipEnv = GetPythonResource("env.zip");
-            if (zipEnv != null) {
-               var archive = new ZipArchive(zipEnv);
-               var extract = !Directory.Exists(virtualEnvPath);
+         // Name of the downloaded Python zip file and the get pip script
+         var pythonZip = Path.Combine(virtualEnvPath, "python.zip");
+         var getPipScript = Path.Combine(virtualEnvPath, "get-pip.py");
+         // Check if the Assembly contains the environment
+         var zipEnv = GetPythonResource("env.zip");
+         if (zipEnv != null) {
+            var archive = new ZipArchive(zipEnv);
+            var extract = !Directory.Exists(virtualEnvPath);
+            if (!extract) {
+               var buildTimeFile = Path.Combine(virtualEnvPath, "build-time.txt");
+               extract |= !File.Exists(buildTimeFile);
                if (!extract) {
-                  var buildTimeFile = Path.Combine(virtualEnvPath, "build-time.txt");
-                  extract |= !File.Exists(buildTimeFile);
-                  if (!extract) {
-                     var arcBuildTimeFile = archive.GetEntry("build-time.txt");
-                     extract |= arcBuildTimeFile.LastWriteTime > File.GetLastWriteTime(buildTimeFile);
-                  }
-               }
-               if (extract) {
-                  Trace.WriteLine("Preparing the environment");
-                  archive.ExtractToDirectory(virtualEnvPath, true);
+                  var arcBuildTimeFile = archive.GetEntry("build-time.txt");
+                  extract |= arcBuildTimeFile.LastWriteTime > File.GetLastWriteTime(buildTimeFile);
                }
             }
-            else {
-               // Check for the existence of the environment directory
-               if (!Directory.Exists(virtualEnvPath)) {
-                  Trace.WriteLine("Preparing the environment");
-                  if (fullPython) {
-                     // Package for setup
-                     var pythonNupkg = Path.Combine(virtualEnvPath, "python.zip");
-                     try {
-                        // Create the virtual environment directory
-                        Directory.CreateDirectory(virtualEnvPath);
-                        // Download the package
-                        using (var client = new WebClient())
-                           client.DownloadFile("https://globalcdn.nuget.org/packages/python.3.7.8.nupkg", pythonNupkg);
-                        // Extract the python
-                        using var zip = ZipFile.Open(pythonNupkg, ZipArchiveMode.Read);
-                        foreach (var entry in zip.Entries) {
-                           if (!entry.FullName.StartsWith("tools"))
-                              continue;
-                           var dest = Path.Combine(virtualEnvPath, entry.FullName[6..]);
-                           var destDir = Path.GetDirectoryName(dest);
-                           if (!Directory.Exists(destDir))
-                              Directory.CreateDirectory(destDir);
-                           using var writer = File.Create(dest);
-                           entry.Open().CopyTo(writer);
-                        }
-                     }
-                     catch {
-                        // Delete the virtual environment directory
-                        try { Directory.Delete(virtualEnvPath, true); } catch { }
-                        throw;
-                     }
-                     finally {
-                        // Delete the package used for setup
-                        try { File.Delete(pythonNupkg); } catch { }
+            if (extract) {
+               Trace.WriteLine("Preparing the environment");
+               archive.ExtractToDirectory(virtualEnvPath, true);
+            }
+         }
+         else {
+            // Check for the existence of the environment directory
+            if (!Directory.Exists(virtualEnvPath)) {
+               Trace.WriteLine("Preparing the environment");
+               if (fullPython) {
+                  // Package for setup
+                  var pythonNupkg = Path.Combine(virtualEnvPath, "python.zip");
+                  try {
+                     // Create the virtual environment directory
+                     Directory.CreateDirectory(virtualEnvPath);
+                     // Download the package
+                     using (var client = new WebClient())
+                        client.DownloadFile("https://globalcdn.nuget.org/packages/python.3.7.8.nupkg", pythonNupkg);
+                     // Extract the python
+                     using var zip = ZipFile.Open(pythonNupkg, ZipArchiveMode.Read);
+                     foreach (var entry in zip.Entries) {
+                        if (!entry.FullName.StartsWith("tools"))
+                           continue;
+                        var dest = Path.Combine(virtualEnvPath, entry.FullName[6..]);
+                        var destDir = Path.GetDirectoryName(dest);
+                        if (!Directory.Exists(destDir))
+                           Directory.CreateDirectory(destDir);
+                        using var writer = File.Create(dest);
+                        entry.Open().CopyTo(writer);
                      }
                   }
-                  else {
-                     // Create the directories
-                     Directory.CreateDirectory(Path.Combine(virtualEnvPath, "Lib"));
-                     // Download of python and get-pip script
-                     using (var client = new WebClient()) {
-                        client.DownloadFile("https://www.python.org/ftp/python/3.7.8/python-3.7.8-embed-amd64.zip", pythonZip);
-                        client.DownloadFile("https://bootstrap.pypa.io/get-pip.py", getPipScript);
-                     }
-                     // Extract the embeddable python to the virtual environment directory
-                     ZipFile.ExtractToDirectory(pythonZip, virtualEnvPath);
-                     // Delete the downloaded embeddable python zip
-                     File.Delete(pythonZip);
-                     // Enable the installation of packages
-                     File.Move(Path.Combine(virtualEnvPath, "python37._pth"), Path.Combine(virtualEnvPath, "python37._pth.disabled"));
+                  catch {
+                     // Delete the virtual environment directory
+                     try { Directory.Delete(virtualEnvPath, true); } catch { }
+                     throw;
+                  }
+                  finally {
+                     // Delete the package used for setup
+                     try { File.Delete(pythonNupkg); } catch { }
                   }
                }
-            }
-            // Set the environment variables pointing on the python virtual environment
-            var path = Environment.GetEnvironmentVariable("PATH").TrimEnd(';');
-            var pythonPath =
-               $"{virtualEnvPath};" +
-               $"{Path.Combine(virtualEnvPath, "Scripts")};" +
-               $"{Path.Combine(virtualEnvPath, "DLLs")};" +
-               $"{Path.Combine(virtualEnvPath, "Lib")};" +
-               $"{Path.Combine(virtualEnvPath, "Lib", "site-packages")}";
-            path = string.IsNullOrEmpty(path) ? pythonPath : pythonPath + ";" + path;
-            Environment.SetEnvironmentVariable("PATH", path, EnvironmentVariableTarget.Process);
-            Environment.SetEnvironmentVariable("PYTHONHOME", virtualEnvPath, EnvironmentVariableTarget.Process);
-            Environment.SetEnvironmentVariable("PYTHONPATH", pythonPath, EnvironmentVariableTarget.Process);
-            Environment.SetEnvironmentVariable("PY_PIP", Path.Combine(virtualEnvPath, "Scripts"), EnvironmentVariableTarget.Process);
-            Environment.SetEnvironmentVariable("PY_LIBS", Path.Combine(virtualEnvPath, "Lib", "site-packages"), EnvironmentVariableTarget.Process);
-            // Check if the installation of pip is needed
-            if (File.Exists(getPipScript)) {
-               // Store the current working dir
-               var cd = Environment.CurrentDirectory;
-               try {
-                  // Set the current directory in the root of the python environment
-                  Environment.CurrentDirectory = virtualEnvPath;
-                  // Install pip
-                  var getPipProcess = new Process();
-                  getPipProcess.StartInfo.FileName = "python.exe";
-                  getPipProcess.StartInfo.Arguments = "get-pip.py";
-                  getPipProcess.StartInfo.UseShellExecute = false;
-                  getPipProcess.StartInfo.RedirectStandardOutput = true;
-                  getPipProcess.StartInfo.RedirectStandardError = true;
-                  getPipProcess.StartInfo.CreateNoWindow = true;
-                  getPipProcess.OutputDataReceived += (sender, e) =>
-                  {
-                     if (e.Data != null)
-                        Trace.WriteLine(e.Data.Replace(Environment.NewLine, ""));
-                  };
-                  getPipProcess.ErrorDataReceived += (sender, e) =>
-                  {
-                     if (e.Data != null)
-                        Trace.WriteLine(e.Data.Replace(Environment.NewLine, ""));
-                  };
-                  getPipProcess.Start();
-                  getPipProcess.BeginOutputReadLine();
-                  getPipProcess.BeginErrorReadLine();
-                  getPipProcess.WaitForExit();
-                  getPipProcess.CancelOutputRead();
-                  getPipProcess.CancelErrorRead();
-                  // Delete the pip installation script
-                  File.Delete(getPipScript);
-               }
-               finally {
-                  // Restore the working directory
-                  Environment.CurrentDirectory = cd;
+               else {
+                  // Create the directories
+                  Directory.CreateDirectory(Path.Combine(virtualEnvPath, "Lib"));
+                  // Download of python and get-pip script
+                  using (var client = new WebClient()) {
+                     client.DownloadFile("https://www.python.org/ftp/python/3.7.8/python-3.7.8-embed-amd64.zip", pythonZip);
+                     client.DownloadFile("https://bootstrap.pypa.io/get-pip.py", getPipScript);
+                  }
+                  // Extract the embeddable python to the virtual environment directory
+                  ZipFile.ExtractToDirectory(pythonZip, virtualEnvPath);
+                  // Delete the downloaded embeddable python zip
+                  File.Delete(pythonZip);
+                  // Enable the installation of packages
+                  File.Move(Path.Combine(virtualEnvPath, "python37._pth"), Path.Combine(virtualEnvPath, "python37._pth.disabled"));
                }
             }
-            // Create the environment activation script
-            var activatePs1 = fullPython && zipEnv == null ? Path.Combine(virtualEnvPath, "Activate.ps1") : Path.Combine(virtualEnvPath, "Scripts", "Activate.ps1");
-            if (!File.Exists(activatePs1)) {
-               var assembly = Assembly.GetExecutingAssembly();
-               var activateScriptName = assembly.GetManifestResourceNames().FirstOrDefault(r => r.EndsWith($".{"Activate.ps1"}"));
-               var activateScript = activateScriptName == null ? null : assembly.GetManifestResourceStream(activateScriptName);
-               if (activateScript != null) {
-                  var content = new StreamReader(activateScript).ReadToEnd().Replace("<VirtualEnvironmentPath>", virtualEnvPath);
-                  File.WriteAllText(activatePs1, content);
-               }
+         }
+         // Set the environment variables pointing on the python virtual environment
+         var path = Environment.GetEnvironmentVariable("PATH").TrimEnd(';');
+         var pythonPath =
+            $"{virtualEnvPath};" +
+            $"{Path.Combine(virtualEnvPath, "Scripts")};" +
+            $"{Path.Combine(virtualEnvPath, "DLLs")};" +
+            $"{Path.Combine(virtualEnvPath, "Lib")};" +
+            $"{Path.Combine(virtualEnvPath, "Lib", "site-packages")}";
+         path = string.IsNullOrEmpty(path) ? pythonPath : pythonPath + ";" + path;
+         Environment.SetEnvironmentVariable("PATH", path, EnvironmentVariableTarget.Process);
+         Environment.SetEnvironmentVariable("PYTHONHOME", virtualEnvPath, EnvironmentVariableTarget.Process);
+         Environment.SetEnvironmentVariable("PYTHONPATH", pythonPath, EnvironmentVariableTarget.Process);
+         Environment.SetEnvironmentVariable("PY_PIP", Path.Combine(virtualEnvPath, "Scripts"), EnvironmentVariableTarget.Process);
+         Environment.SetEnvironmentVariable("PY_LIBS", Path.Combine(virtualEnvPath, "Lib", "site-packages"), EnvironmentVariableTarget.Process);
+         // Check if the installation of pip is needed
+         if (File.Exists(getPipScript)) {
+            // Store the current working dir
+            var cd = Environment.CurrentDirectory;
+            try {
+               // Set the current directory in the root of the python environment
+               Environment.CurrentDirectory = virtualEnvPath;
+               // Install pip
+               var getPipProcess = new Process();
+               getPipProcess.StartInfo.FileName = "python.exe";
+               getPipProcess.StartInfo.Arguments = "get-pip.py";
+               getPipProcess.StartInfo.UseShellExecute = false;
+               getPipProcess.StartInfo.RedirectStandardOutput = true;
+               getPipProcess.StartInfo.RedirectStandardError = true;
+               getPipProcess.StartInfo.CreateNoWindow = true;
+               getPipProcess.OutputDataReceived += (sender, e) =>
+               {
+                  if (e.Data != null)
+                     Trace.WriteLine(e.Data.Replace(Environment.NewLine, ""));
+               };
+               getPipProcess.ErrorDataReceived += (sender, e) =>
+               {
+                  if (e.Data != null)
+                     Trace.WriteLine(e.Data.Replace(Environment.NewLine, ""));
+               };
+               getPipProcess.Start();
+               getPipProcess.BeginOutputReadLine();
+               getPipProcess.BeginErrorReadLine();
+               getPipProcess.WaitForExit();
+               getPipProcess.CancelOutputRead();
+               getPipProcess.CancelErrorRead();
+               // Delete the pip installation script
+               File.Delete(getPipScript);
+            }
+            finally {
+               // Restore the working directory
+               Environment.CurrentDirectory = cd;
+            }
+         }
+         // Create the environment activation script
+         var activatePs1 = fullPython && zipEnv == null ? Path.Combine(virtualEnvPath, "Activate.ps1") : Path.Combine(virtualEnvPath, "Scripts", "Activate.ps1");
+         if (!File.Exists(activatePs1)) {
+            var assembly = Assembly.GetExecutingAssembly();
+            var activateScriptName = assembly.GetManifestResourceNames().FirstOrDefault(r => r.EndsWith($".{"Activate.ps1"}"));
+            var activateScript = activateScriptName == null ? null : assembly.GetManifestResourceStream(activateScriptName);
+            if (activateScript != null) {
+               var content = new StreamReader(activateScript).ReadToEnd().Replace("<VirtualEnvironmentPath>", virtualEnvPath);
+               File.WriteAllText(activatePs1, content);
             }
          }
          // Initialize the python engine and enable thread execution
@@ -291,7 +290,7 @@ namespace ODModelBuilderTF
                   missing.ForEach(req => Trace.WriteLine(req));
                   Trace.WriteLine("Installing.");
                   // Create a temporary requirements file
-                  var tempRequirements = Path.GetTempFileName();
+                  var tempRequirements = Path.GetTempFileName(); //@@@ Fix for pycocotools windows installation problems, by using the constraints
                   try {
                      using var writer = new StreamWriter(tempRequirements);
                      for (var i = 0; i < missing.Count; i++) {
@@ -371,7 +370,7 @@ namespace ODModelBuilderTF
                      MainScope.Import(PythonEngine.ModuleFromString("default_cfg", GetPythonScript("default_cfg.py")));
                      MainScope.Import(PythonEngine.ModuleFromString("utilities", GetPythonScript("utilities.py")));
                      MainScope.Import(PythonEngine.ModuleFromString("od_install", GetPythonScript("od_install.py")));
-                     ((dynamic)MainScope).od_install.install_object_detection(no_cache: true, no_deps: true);
+                     ((dynamic)MainScope).od_install.install_object_detection(no_cache: true);
                   }
                }
                if (GetMissingRequirements(new[] { "object-detection" }).Count > 0) {
