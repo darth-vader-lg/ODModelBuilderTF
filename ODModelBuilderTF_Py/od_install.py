@@ -10,15 +10,16 @@ except: pass
 try:    from    utilities import *
 except: pass
 
-def install_object_detection(no_cache=True, custom_tf_dir=None):
+def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir=None):
     """
     Install a well known environment.
     """
     install_extra_args = []
     if (no_cache):
         install_extra_args.append('--no-cache')
-    install_extra_args.append('-c')
-    install_extra_args.append(os.path.join(os.path.dirname(__file__), 'constraints.txt'))
+    if (requirements):
+        install_extra_args.append('-c')
+        install_extra_args.append(requirements)
 
     # Install pycocotools. It must be installed as first for some problems building on Windows.
     if (not get_package_info('pycocotools').name):
@@ -210,4 +211,4 @@ def install_object_detection(no_cache=True, custom_tf_dir=None):
     print('Installation ok.')
 
 if __name__ == '__main__':
-    install_object_detection()
+    install_object_detection(os.path.join(os.path.dirname(__file__), 'requirements.txt'))

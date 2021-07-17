@@ -72,16 +72,16 @@ namespace ODModelBuilderTF
       /// <param name="redirectStdout">Redirect the standard output</param>
       /// <param name="redirectStderr">Redirect the standard error</param>
       /// <param name="virtualEnvPath">Path of the virtual environment</param>
-      /// <param name="fullPython">Enable the installation of the full python instead of the embeddable one</param>
-      public static void Init(bool redirectStdout = true, bool redirectStderr = true, string virtualEnvPath = default, bool fullPython = true)
+      public static void Init(bool redirectStdout = true, bool redirectStderr = true, string virtualEnvPath = default)
       {
+         // Check if already initialized
+         if (Initialized)
+            return;
          // Virtual environment's full path
          var assemblyName = Assembly.GetExecutingAssembly().GetName();
          virtualEnvPath = string.IsNullOrEmpty(virtualEnvPath) ? Path.Combine(Path.GetTempPath(), $"{assemblyName.Name}-{assemblyName.Version}") : Path.GetFullPath(virtualEnvPath);
          // Create a mutex to avoid overlapped initializations
          using var mutex = new Mutex(true, virtualEnvPath.Replace("\\", "_").Replace(":", "-"));
-         if (Initialized)
-            return;
          // Name of the downloaded Python zip file and the get pip script
          var pythonZip = Path.Combine(virtualEnvPath, "python.zip");
          var getPipScript = Path.Combine(virtualEnvPath, "get-pip.py");
@@ -107,52 +107,35 @@ namespace ODModelBuilderTF
             // Check for the existence of the environment directory
             if (!Directory.Exists(virtualEnvPath)) {
                Trace.WriteLine("Preparing the environment");
-               if (fullPython) {
-                  // Package for setup
-                  var pythonNupkg = Path.Combine(virtualEnvPath, "python.zip");
-                  try {
-                     // Create the virtual environment directory
-                     Directory.CreateDirectory(virtualEnvPath);
-                     // Download the package
-                     using (var client = new WebClient())
-                        client.DownloadFile("https://globalcdn.nuget.org/packages/python.3.7.8.nupkg", pythonNupkg);
-                     // Extract the python
-                     using var zip = ZipFile.Open(pythonNupkg, ZipArchiveMode.Read);
-                     foreach (var entry in zip.Entries) {
-                        if (!entry.FullName.StartsWith("tools"))
-                           continue;
-                        var dest = Path.Combine(virtualEnvPath, entry.FullName[6..]);
-                        var destDir = Path.GetDirectoryName(dest);
-                        if (!Directory.Exists(destDir))
-                           Directory.CreateDirectory(destDir);
-                        using var writer = File.Create(dest);
-                        entry.Open().CopyTo(writer);
-                     }
-                  }
-                  catch {
-                     // Delete the virtual environment directory
-                     try { Directory.Delete(virtualEnvPath, true); } catch { }
-                     throw;
-                  }
-                  finally {
-                     // Delete the package used for setup
-                     try { File.Delete(pythonNupkg); } catch { }
+               // Package for setup
+               var pythonNupkg = Path.Combine(virtualEnvPath, "python.zip");
+               try {
+                  // Create the virtual environment directory
+                  Directory.CreateDirectory(virtualEnvPath);
+                  // Download the package
+                  using (var client = new WebClient())
+                     client.DownloadFile("https://globalcdn.nuget.org/packages/python.3.7.8.nupkg", pythonNupkg);
+                  // Extract the python
+                  using var zip = ZipFile.Open(pythonNupkg, ZipArchiveMode.Read);
+                  foreach (var entry in zip.Entries) {
+                     if (!entry.FullName.StartsWith("tools"))
+                        continue;
+                     var dest = Path.Combine(virtualEnvPath, entry.FullName[6..]);
+                     var destDir = Path.GetDirectoryName(dest);
+                     if (!Directory.Exists(destDir))
+                        Directory.CreateDirectory(destDir);
+                     using var writer = File.Create(dest);
+                     entry.Open().CopyTo(writer);
                   }
                }
-               else {
-                  // Create the directories
-                  Directory.CreateDirectory(Path.Combine(virtualEnvPath, "Lib"));
-                  // Download of python and get-pip script
-                  using (var client = new WebClient()) {
-                     client.DownloadFile("https://www.python.org/ftp/python/3.7.8/python-3.7.8-embed-amd64.zip", pythonZip);
-                     client.DownloadFile("https://bootstrap.pypa.io/get-pip.py", getPipScript);
-                  }
-                  // Extract the embeddable python to the virtual environment directory
-                  ZipFile.ExtractToDirectory(pythonZip, virtualEnvPath);
-                  // Delete the downloaded embeddable python zip
-                  File.Delete(pythonZip);
-                  // Enable the installation of packages
-                  File.Move(Path.Combine(virtualEnvPath, "python37._pth"), Path.Combine(virtualEnvPath, "python37._pth.disabled"));
+               catch {
+                  // Delete the virtual environment directory
+                  try { Directory.Delete(virtualEnvPath, true); } catch { }
+                  throw;
+               }
+               finally {
+                  // Delete the package used for setup
+                  try { File.Delete(pythonNupkg); } catch { }
                }
             }
          }
@@ -170,47 +153,8 @@ namespace ODModelBuilderTF
          Environment.SetEnvironmentVariable("PYTHONPATH", pythonPath, EnvironmentVariableTarget.Process);
          Environment.SetEnvironmentVariable("PY_PIP", Path.Combine(virtualEnvPath, "Scripts"), EnvironmentVariableTarget.Process);
          Environment.SetEnvironmentVariable("PY_LIBS", Path.Combine(virtualEnvPath, "Lib", "site-packages"), EnvironmentVariableTarget.Process);
-         // Check if the installation of pip is needed
-         if (File.Exists(getPipScript)) {
-            // Store the current working dir
-            var cd = Environment.CurrentDirectory;
-            try {
-               // Set the current directory in the root of the python environment
-               Environment.CurrentDirectory = virtualEnvPath;
-               // Install pip
-               var getPipProcess = new Process();
-               getPipProcess.StartInfo.FileName = "python.exe";
-               getPipProcess.StartInfo.Arguments = "get-pip.py";
-               getPipProcess.StartInfo.UseShellExecute = false;
-               getPipProcess.StartInfo.RedirectStandardOutput = true;
-               getPipProcess.StartInfo.RedirectStandardError = true;
-               getPipProcess.StartInfo.CreateNoWindow = true;
-               getPipProcess.OutputDataReceived += (sender, e) =>
-               {
-                  if (e.Data != null)
-                     Trace.WriteLine(e.Data.Replace(Environment.NewLine, ""));
-               };
-               getPipProcess.ErrorDataReceived += (sender, e) =>
-               {
-                  if (e.Data != null)
-                     Trace.WriteLine(e.Data.Replace(Environment.NewLine, ""));
-               };
-               getPipProcess.Start();
-               getPipProcess.BeginOutputReadLine();
-               getPipProcess.BeginErrorReadLine();
-               getPipProcess.WaitForExit();
-               getPipProcess.CancelOutputRead();
-               getPipProcess.CancelErrorRead();
-               // Delete the pip installation script
-               File.Delete(getPipScript);
-            }
-            finally {
-               // Restore the working directory
-               Environment.CurrentDirectory = cd;
-            }
-         }
          // Create the environment activation script
-         var activatePs1 = fullPython && zipEnv == null ? Path.Combine(virtualEnvPath, "Activate.ps1") : Path.Combine(virtualEnvPath, "Scripts", "Activate.ps1");
+         var activatePs1 = Path.Combine(virtualEnvPath, "Activate.ps1");
          if (!File.Exists(activatePs1)) {
             var assembly = Assembly.GetExecutingAssembly();
             var activateScriptName = assembly.GetManifestResourceNames().FirstOrDefault(r => r.EndsWith($".{"Activate.ps1"}"));
@@ -247,142 +191,38 @@ namespace ODModelBuilderTF
             TracePythonOutputs(traceCancel.Token);
             threadState = PythonEngine.BeginAllowThreads();
          }
+         // Initialize the Python engine
          InitPythonEngine();
+         // Check for missing requirements
          var reinit = false;
-         if (Path.GetFileName(Path.GetDirectoryName(virtualEnvPath)).ToLower() != "odmodelbuildertf_py") {
-            // Define the package check function
-            static List<string> GetMissingRequirements(IEnumerable<string> requirements)
-            {
-               // List of missing packages
-               var result = new List<string>();
+         if (zipEnv == null && Path.GetFileName(Path.GetDirectoryName(virtualEnvPath)).ToLower() != "odmodelbuildertf_py") {
+            // Read the requirements file
+            var requirementsRes = Assembly.GetExecutingAssembly().GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("requirements.txt"));
+            using var requirementsContent = Assembly.GetExecutingAssembly().GetManifestResourceStream(requirementsRes);
+            var tempRequirements = Path.GetTempFileName();
+            try {
+               using var writer = File.Create(tempRequirements);
+               requirementsContent.CopyTo(writer);
+               writer.Close();
                using (Py.GIL()) {
-                  // Package resources module and workingset
-                  var pkg = MainScope.Import("pkg_resources");
-                  var importlib = MainScope.Import("importlib");
-                  importlib.reload(pkg);
-                  var ws = pkg.WorkingSet();
-                  // Check all requirements
-                  foreach (var req in requirements) {
-                     // Skip comments and blank lines
-                     if (string.IsNullOrWhiteSpace(req) || req.TrimStart().StartsWith("#"))
-                        continue;
-                     // Check if the package exists
-                     if (ws.find(pkg.Requirement(req)) == null)
-                        result.Add(req);
-                  }
-               }
-               // Return the list of missing packages
-               return result;
-            }
-            // Install the required packages
-            try {
-               // Read the requirements file
-               var requirementsRes = Assembly.GetExecutingAssembly().GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("requirements.txt"));
-               using var requirementsContent = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(requirementsRes));
-               // Read all requirements from the requirements file
-               var requirements = requirementsContent.ReadToEnd().Split(Environment.NewLine);
-               // Get the list of missing packages
-               var missing = GetMissingRequirements(requirements);
-               if (missing.Count > 0) {
-                  reinit = true;
-                  // Trace the missing packages
-                  Trace.WriteLine("The following requirements are missing:");
-                  missing.ForEach(req => Trace.WriteLine(req));
-                  Trace.WriteLine("Installing.");
-                  // Create a temporary requirements file
-                  var tempRequirements = Path.GetTempFileName(); //@@@ Fix for pycocotools windows installation problems, by using the constraints
-                  try {
-                     using var writer = new StreamWriter(tempRequirements);
-                     for (var i = 0; i < missing.Count; i++) {
-                        var package = missing[i];
-                        // Check if is just a comment or a blank line
-                        if (string.IsNullOrWhiteSpace(package) || package.TrimStart().StartsWith("#"))
-                           continue;
-                        // Choose the right tensorflow for the installed CUDA
-                        if (package.StartsWith("tensorflow==")) {
-                           var sbCudaVer = new StringBuilder();
-                           try {
-                              var nvccProcess = new Process();
-                              nvccProcess.StartInfo.FileName = "nvcc.exe";
-                              nvccProcess.StartInfo.Arguments = "--version";
-                              nvccProcess.StartInfo.UseShellExecute = false;
-                              nvccProcess.StartInfo.RedirectStandardOutput = true;
-                              nvccProcess.StartInfo.CreateNoWindow = true;
-                              nvccProcess.OutputDataReceived += (sender, e) =>
-                              {
-                                 if (e.Data != null)
-                                    sbCudaVer.AppendLine(e.Data);
-                              };
-                              nvccProcess.Start();
-                              nvccProcess.BeginOutputReadLine();
-                              nvccProcess.WaitForExit();
-                              nvccProcess.CancelOutputRead();
-                           }
-                           catch (Exception) {
-                           }
-                           if (sbCudaVer.ToString().Contains("V10.1")) {
-                              var version = package[(package.IndexOf("==") + 2)..].Trim();
-                              var whl =
-                                 Directory.GetFiles(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Packages"), "*.whl")
-                                 .Where(file => { var name = Path.GetFileName(file).ToLower(); return name.Contains("tensorflow") && name.Contains("cp37") && name.Contains(version); })
-                                 .FirstOrDefault();
-                              if (whl != default)
-                                 package = whl;
-                           }
-                        }
-                        writer.WriteLine(package);
-                     }
-                     writer.Close();
-                     // Upgrade pip and install the requirements
-                     using (Py.GIL()) {
-                        MainScope.Import(PythonEngine.ModuleFromString("utilities", GetPythonScript("utilities.py")));
-                        var utilities = ((dynamic)MainScope).utilities;
-                        utilities.execute_script(new[] { "-m", "pip", "install", "--upgrade", "pip" });
-                        utilities.execute_script(new[] { "-m", "pip", "install", "--upgrade", "setuptools" });
-                        utilities.execute_script(new[] { "-m", "pip", "install", "--no-cache", "--no-deps", "-r", tempRequirements });
-                     }
-                     // Check for successfully installation
-                     missing = GetMissingRequirements(requirements);
-                     if (missing.Count > 0) {
-                        Trace.WriteLine("Error! Couldn't install some requirements:");
-                        missing.ForEach(req => Trace.WriteLine(req));
-                        throw new Exception("Installation failed");
-                     }
-                  }
-                  finally {
-                     // Delete the temporary requirements file
-                     try {
-                        File.Delete(tempRequirements);
-                     }
-                     catch { }
+                  MainScope.Import(PythonEngine.ModuleFromString("default_cfg", GetPythonScript("default_cfg.py")));
+                  MainScope.Import(PythonEngine.ModuleFromString("utilities", GetPythonScript("utilities.py")));
+                  MainScope.Import(PythonEngine.ModuleFromString("od_install", GetPythonScript("od_install.py")));
+                  MainScope.Import(PythonEngine.ModuleFromString("install_virtual_environment", GetPythonScript("install_virtual_environment.py")));
+                  var missing = ((dynamic)MainScope).install_virtual_environment.check_requirements(requirements: tempRequirements, no_deps: true);
+                  if (missing.Length() > 0) {
+                     reinit = true;
+                     ((dynamic)MainScope).install_virtual_environment.install_virtual_environment(
+                        env_name: virtualEnvPath,
+                        requirements: tempRequirements,
+                        no_cache: false, //@@@true,
+                        custom_tf_dir: Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Packages"));
                   }
                }
             }
-            catch (Exception exc) {
-               Trace.WriteLine(exc);
-               throw;
+            finally {
+               try { File.Delete(tempRequirements); } catch { }
             }
-            // Install the object detection system
-            try {
-               if (GetMissingRequirements(new[] { "object-detection" }).Count > 0) {
-                  reinit = true;
-                  using (Py.GIL()) {
-                     MainScope.Import(PythonEngine.ModuleFromString("default_cfg", GetPythonScript("default_cfg.py")));
-                     MainScope.Import(PythonEngine.ModuleFromString("utilities", GetPythonScript("utilities.py")));
-                     MainScope.Import(PythonEngine.ModuleFromString("od_install", GetPythonScript("od_install.py")));
-                     ((dynamic)MainScope).od_install.install_object_detection(no_cache: true);
-                  }
-               }
-               if (GetMissingRequirements(new[] { "object-detection" }).Count > 0) {
-                  Trace.WriteLine("Error! Couldn't install object detection api");
-                  throw new Exception("Installation failed");
-               }
-            }
-            catch (Exception exc) {
-               Trace.WriteLine(exc);
-               throw;
-            }
-            reinit = true;
          }
          if (reinit) {
             PythonEngine.EndAllowThreads(threadState);
