@@ -153,17 +153,6 @@ namespace ODModelBuilderTF
          Environment.SetEnvironmentVariable("PYTHONPATH", pythonPath, EnvironmentVariableTarget.Process);
          Environment.SetEnvironmentVariable("PY_PIP", Path.Combine(virtualEnvPath, "Scripts"), EnvironmentVariableTarget.Process);
          Environment.SetEnvironmentVariable("PY_LIBS", Path.Combine(virtualEnvPath, "Lib", "site-packages"), EnvironmentVariableTarget.Process);
-         // Create the environment activation script
-         var activatePs1 = Path.Combine(virtualEnvPath, "Activate.ps1");
-         if (!File.Exists(activatePs1)) {
-            var assembly = Assembly.GetExecutingAssembly();
-            var activateScriptName = assembly.GetManifestResourceNames().FirstOrDefault(r => r.EndsWith($".{"Activate.ps1"}"));
-            var activateScript = activateScriptName == null ? null : assembly.GetManifestResourceStream(activateScriptName);
-            if (activateScript != null) {
-               var content = new StreamReader(activateScript).ReadToEnd().Replace("<VirtualEnvironmentPath>", virtualEnvPath);
-               File.WriteAllText(activatePs1, content);
-            }
-         }
          // Initialize the python engine and enable thread execution
          void InitPythonEngine()
          {
