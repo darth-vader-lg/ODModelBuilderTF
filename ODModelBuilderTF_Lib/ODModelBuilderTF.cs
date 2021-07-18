@@ -204,7 +204,7 @@ namespace ODModelBuilderTF
                      ((dynamic)MainScope).install_virtual_environment.install_virtual_environment(
                         env_name: virtualEnvPath,
                         requirements: tempRequirements,
-                        no_cache: false, //@@@true,
+                        no_cache: true,
                         custom_tf_dir: Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Packages"));
                   }
                }

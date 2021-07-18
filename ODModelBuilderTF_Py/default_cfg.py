@@ -42,5 +42,5 @@ class Cfg(object):
     od_api_git_repo = 'https://github.com/darth-vader-lg/models.git'
     od_api_git_ref = 'odv2.4.0'
     # ONNX conversion tool location and reference
-    tf2onnx_git_repo = 'https://github.com/onnx/tensorflow-onnx.git'
-    tf2onnx_git_ref = '596f23741b1b5476e720089ed0dfd5dbcc5a44d0'
+    tf2onnx_git_repo = None
+    tf2onnx_git_ref = None

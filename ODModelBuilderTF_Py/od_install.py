@@ -23,20 +23,18 @@ def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir
 
     # Install pycocotools. It must be installed as first for some problems building on Windows.
     if (not get_package_info('pycocotools').name):
-        install('pycocotools', install_extra_args)
         # For some reasons the package doesn't function if installed by wheel on Windows.
         # So temporary uninstall wheel
         reinstall_wheel = False
         if (get_package_info('wheel').name):
             uninstall('wheel')
             reinstall_wheel = True
-        if (not get_package_info('pycocotools').name):
-            raise Exception('Error installing pycocotools')
+        install('pycocotools', install_extra_args)
         # Reinstall wheel
         if (reinstall_wheel):
             install('wheel', install_extra_args)
-    else:
-        print('pycocotools is already installed')
+    if (not get_package_info('pycocotools').name):
+        raise Exception('Error: pycocotools not found.')
 
     # Install TensorFlow
     is_installed = False
@@ -65,13 +63,14 @@ def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir
                 print(f'Warning: couldn\'t find cuda')
                 print('Installing the standard tensorflow.')
         install(tensorflow_package, install_extra_args)
-    else:
-        print(f'TensorFlow {Cfg.tensorflow_version} is already installed')
+    if (get_package_info('tensorflow').version != tf_comparing_version):
+        raise Exception(f'Error: tensorflow-{tf_comparing_version} not found.')
+    
     # Install pygit2
     if (not get_package_info('pygit2').name):
         install('pygit2', install_extra_args)
-    else:
-        print('pygit2 is already installed')
+    if (not get_package_info('pygit2').name):
+        raise Exception('Error: pygit2 not found.')
     import pygit2
     # Progress class for the git output
     class GitCallbacks(pygit2.RemoteCallbacks):
@@ -86,6 +85,7 @@ def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir
             if (stats.received_objects >= stats.total_objects and stats.indexed_objects >= stats.total_objects and stats.indexed_deltas >= stats.total_deltas):
                 print('\r\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\rDone Deltas %d, Objects %d.'%(stats.total_objects, stats.total_objects))
             return super().transfer_progress(stats)
+    
     # Directory of the TensorFlow object detection api and commit id
     if (os.path.isdir(Cfg.od_api_git_repo)):
         od_api_dir = Cfg.od_api_git_repo
@@ -101,7 +101,7 @@ def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir
     except: pass
     # Install the TensorFlow models
     if (not is_installed):
-        # Install pygit2
+        # Install from git
         try:
             repo = pygit2.Repository(od_api_dir)
         except:
@@ -129,10 +129,8 @@ def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir
                 if (rq.key == "grpcio"):
                     install(str(rq).replace('grpcio', 'grpcio-tools'), install_extra_args)
                     break
-            if (not get_package_info('grpcio-tools').name):
-                raise Exception('Error installing grpcio-tools')
-        else:
-            print('grpcio-tools is already installed')
+        if (not get_package_info('grpcio-tools').name):
+            raise Exception('Error: grpcio-tools not found.')
         # Compile the protobufs
         print(f'Compiling the protobufs')
         import grpc_tools.protoc as protoc
@@ -154,8 +152,7 @@ def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir
         except Exception as e: pass
         # Return to the original directory
         os.chdir(currentDir)
-    else:
-        print(f'TensorFlow object detection api {Cfg.od_api_git_ref} is already installed')
+    
     # Append of the paths
     paths = [
         os.path.join(od_api_dir, 'research'),
@@ -165,8 +162,12 @@ def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir
     for path in paths:
         if (not path in sys.path):
             sys.path.append(path)
+
     # Directory of the onnx converter and commit id
-    if (Cfg.tf2onnx_git_repo and Cfg.tf2onnx_git_ref):
+    if (not Cfg.tf2onnx_git_repo or not Cfg.tf2onnx_git_ref):
+        if (not get_package_info('tf2onnx').name):
+            install('tf2onnx', install_extra_args)
+    else:
         if (os.path.isdir(Cfg.tf2onnx_git_repo)):
             tf2onnx_dir = Cfg.tf2onnx_git_repo
         else:
@@ -174,7 +175,7 @@ def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir
         # Install the onnx converter
         is_installed = False
         try:
-            if (get_package_info('tensorflow-onnx').version):
+            if (get_package_info('tf2onnx').version):
                 repo = pygit2.Repository(tf2onnx_dir)
                 if ((od_api_dir == Cfg.od_api_git_repo) or (repo.head.target.hex == Cfg.tf2onnx_git_ref)):
                     is_installed = True
@@ -207,8 +208,9 @@ def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir
             os.chdir(currentDir)
         else:
             print(f'Onnx converter {Cfg.tf2onnx_git_ref} is already installed')
-
-    print('Installation ok.')
+    if (not get_package_info('tf2onnx').name):
+        raise Exception('Error: tf2onnx not found.')
+    print('Object detection environment installed successfully.')
 
 if __name__ == '__main__':
     install_object_detection(os.path.join(os.path.dirname(__file__), 'requirements.txt'))
