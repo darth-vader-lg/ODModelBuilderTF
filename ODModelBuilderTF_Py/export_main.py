@@ -11,8 +11,16 @@ allow_flags_override()
 flags.DEFINE_string   ('onnx', None, 'Name of the optional onnx file to generate')
 flags.DEFINE_string   ('frozen_graph', None, 'Name of the optional frozen graph file to generate')
 
-def export_main(unused_argv):
-    # Init the train environment
+def export_main(unused_argv, **kwargs):
+    """Main function for the export.
+    Args:
+        unused_argv:                /
+        kwargs:                     extra argments
+            saved_model_callback:   a function called after saved_model export.
+            frozen_graph_callback:  a function called after the frozen graph export.
+            onnx_callback:          a function called after the onnx export.
+    """
+    # Init the export environment
     from export_environment import init_export_environment
     from export_parameters import ExportParameters
     export_parameters = ExportParameters()
@@ -27,6 +35,19 @@ def export_main(unused_argv):
         not export_parameters.frozen_graph):
         return
     init_export_environment(export_parameters)
+    # Export callback
+    def _export_callback(export_fn, export_path):
+        """Call export callback function."""
+        # Prepare the data  
+        class ExportData(object):
+            def __init__(self, *args, **kwargs):
+                self.path = export_path
+                self.cancel = False
+                return super().__init__(*args, **kwargs)
+        export_data = ExportData()
+        if (export_fn in kwargs):
+            kwargs[export_fn](export_data)
+        return export_data
     # Export the saved_model if it's needed an update
     if (export_parameters.trained_checkpoint_dir):
         # Import the export main function
@@ -36,15 +57,21 @@ def export_main(unused_argv):
             pipeline_config_path = export_parameters.pipeline_config_path = os.path.join(export_parameters.trained_checkpoint_dir, 'pipeline.config')
         export_parameters.update_flags()
         exporter_main_v2.main(unused_argv)
+        if (_export_callback('saved_model_callback', os.path.join(export_parameters.output_directory, 'saved_model')).cancel):
+            return;
     # Export the frozen model if defined
     frozen_inputs = frozen_outputs = None
     if (export_parameters.frozen_graph):
         from export_frozen_graph import export_frozen_graph
         frozen_inputs, frozen_outputs = export_frozen_graph(export_parameters)
+        if (_export_callback('frozen_graph_callback', os.path.join(export_parameters.output_directory, export_parameters.frozen_graph)).cancel):
+            return;
     # Export the ONNX if defined
     if (export_parameters.onnx):
         from export_onnx import export_onnx
         export_onnx(export_parameters)
+        if (_export_callback('onnx_callback', os.path.join(export_parameters.output_directory, export_parameters.onnx)).cancel):
+            return;
     # Export the configuration files
     from export_model_config import export_model_config
     export_model_config(export_parameters, frozen_inputs, frozen_outputs)

@@ -25,11 +25,14 @@ if (-not(Test-Path -PathType Container $scriptRoot\env)) {
     # Remove the setup temporary directory
     Remove-Item -Path $scriptRoot\env.setup -Recurse
     if ($LASTEXITCODE) { Exit $LASTEXITCODE }
+    # Copy the aenvironment activation scripts
+    Copy-Item .\Activate.cmd.txt $scriptRoot\env\Activate.cmd
+    Copy-Item .\Activate.ps1.txt $scriptRoot\env\Activate.ps1
     Write-Output 'Done.'
 }
 # Set the path to the python environment
-$env:Path = "$scriptRoot\env;$scriptRoot\env\Scripts;$scriptRoot\env\DLLs;$scriptRoot\env\Lib;$scriptRoot\env\Lib\site-packages;$env:Path"
+$Env:Path = "$scriptRoot\env;$scriptRoot\env\Scripts;$scriptRoot\env\DLLs;$scriptRoot\env\Lib;$scriptRoot\env\Lib\site-packages;$Env:Path"
 # Install the environment
-python install_virtual_environment.py --custom-tf-dir "$env:USERPROFILE\Packages"
+python.exe install_virtual_environment.py --requirements "$scriptRoot\requirements.txt" --custom-tf-dir "$Env:USERPROFILE\Packages"
 if ($LASTEXITCODE) { Exit $LASTEXITCODE }
 Exit 0

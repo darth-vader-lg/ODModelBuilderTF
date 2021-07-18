@@ -26,7 +26,6 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <None Remove="py\Activate.ps1" />
     <None Remove="$(TargetDir)env.zip" />
   </ItemGroup>
 
@@ -56,8 +55,7 @@
     <EmbeddedResource Include="$(PythonProject)train_pipeline.py" Link="py\train_pipeline.py" />
     <EmbeddedResource Include="$(PythonProject)train_tensorboard.py" Link="py\train_tensorboard.py" />
     <EmbeddedResource Include="$(PythonProject)utilities.py" Link="py\utilities.py" />
-    <EmbeddedResource Include="py\Activate.ps1" />
-    <EmbeddedResource Include="$(TargetDir)env.zip" />
+    <EmbeddedResource Include="$(TargetDir)env.zip" Condition="$(ConfigurationName) != 'Debug'" />
   </ItemGroup>
 
   <ItemGroup>
@@ -74,7 +72,7 @@
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
   </Target>
 
-  <Target Name="ZipPyEnvironment" AfterTargets="PreBuild">
+  <Target Name="ZipPyEnvironment" AfterTargets="PreBuild" Condition="$(ConfigurationName) != 'Debug'">
     <PropertyGroup>
       <ZipFile>$(TargetDir)env.zip</ZipFile>
       <BuildTimestamp>0</BuildTimestamp>
@@ -82,7 +80,7 @@
       <BuildTimestamp Condition="Exists('$(PythonProjectOut)')">$([System.IO.File]::GetLastWriteTime('$(PythonProjectOut)').Ticks)</BuildTimestamp>
       <ZipTimestamp Condition="Exists('$(ZipFile)')">$([System.IO.File]::GetLastWriteTime('$(ZipFile)').Ticks)</ZipTimestamp>
     </PropertyGroup>
-    <ZipDirectory Condition="$(BuildTimestamp) > $(ZipTimestamp)" SourceDirectory="$(PythonProjectEnv)" DestinationFile="$(ZipFile)" Overwrite="true" />
+    <ZipDirectory Condition="$(BuildTimestamp) &gt; $(ZipTimestamp)" SourceDirectory="$(PythonProjectEnv)" DestinationFile="$(ZipFile)" Overwrite="true" />
   </Target>
   
   <Target Name="CleanPyEnvironment" AfterTargets="Clean">

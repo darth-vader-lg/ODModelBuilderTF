@@ -12,7 +12,8 @@ def start_tensorboard(prm: BaseParameters):
     paths = [
         'tensorboard',
         os.path.join(os.path.dirname(sys.executable), 'tensorboard'),
-        os.path.join(getattr(sys, '_MEIPASS', sys.executable), 'tensorboard')]
+        os.path.join(os.path.dirname(sys.executable), 'Scripts', 'tensorboard'),
+        os.path.join(getattr(sys, '_MEIPASS', sys.executable), 'tensorboard')] # TODO: Remove since executable configuration doesn't exist anymore
     for tensorboard_path in paths:
         try:
             cmd = [tensorboard_path]
