@@ -1,0 +1,3 @@
+[submodule "SyncJupyterNotebook"]
+	path = SyncJupyterNotebook
+	url = https://github.com/darth-vader-lg/SyncJupyterNotebook.git
