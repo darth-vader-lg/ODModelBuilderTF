@@ -51,7 +51,7 @@ def execute_script(cmd: []):
     for output in execute_subprocess(script_cmd):
         print(output, end="")
 
-def get_package_info(package_name: str):
+def get_package_info(package_name: str, no_deps=False):
     """
     Return a package and its version if installed. Otherwise None
     package_name    -- package name to test for existence
@@ -61,7 +61,17 @@ def get_package_info(package_name: str):
             try:
                 import pkg_resources, importlib
                 importlib.reload(pkg_resources)
-                dist = pkg_resources.get_distribution(package_name)
+                working_set = pkg_resources.WorkingSet() if no_deps else None
+                dist = None
+                if (working_set):
+                    rq = pkg_resources.Requirement(package_name)
+                    dist = working_set.find(rq)
+                    if (not dist):
+                        raise Exception()
+                if (not dist):
+                    dist = pkg_resources.get_distribution(package_name)
+                    if (not dist):
+                        raise Exception()
                 self.name = dist.key
                 self.version = dist.version
                 self.requires = dist.requires()

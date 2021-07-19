@@ -19,8 +19,11 @@ def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir
         install_extra_args.append('--no-cache')
     if (requirements):
         install_extra_args.append('-c')
-        install_extra_args.append(requirements)
+        install_extra_args.append(os.path.abspath(requirements))
 
+    # List of packages to check at the end of installation
+    packages_to_check = []
+        
     # Install pycocotools. It must be installed as first for some problems building on Windows.
     if (not get_package_info('pycocotools').name):
         # For some reasons the package doesn't function if installed by wheel on Windows.
@@ -30,11 +33,11 @@ def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir
             uninstall('wheel')
             reinstall_wheel = True
         install('pycocotools', install_extra_args)
+        packages_to_check.append('pycocotools')
         # Reinstall wheel
         if (reinstall_wheel):
             install('wheel', install_extra_args)
-    if (not get_package_info('pycocotools').name):
-        raise Exception('Error: pycocotools not found.')
+            packages_to_check.append('wheel')
 
     # Install TensorFlow
     is_installed = False
@@ -63,14 +66,11 @@ def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir
                 print(f'Warning: couldn\'t find cuda')
                 print('Installing the standard tensorflow.')
         install(tensorflow_package, install_extra_args)
-    if (get_package_info('tensorflow').version != tf_comparing_version):
-        raise Exception(f'Error: tensorflow-{tf_comparing_version} not found.')
+        packages_to_check.append('tensorflow')
     
     # Install pygit2
     if (not get_package_info('pygit2').name):
         install('pygit2', install_extra_args)
-    if (not get_package_info('pygit2').name):
-        raise Exception('Error: pygit2 not found.')
     import pygit2
     # Progress class for the git output
     class GitCallbacks(pygit2.RemoteCallbacks):
@@ -124,13 +124,7 @@ def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir
         os.chdir(os.path.join(od_api_dir, 'research'))
         # Install the protobuf tools
         if (not get_package_info('grpcio-tools').name):
-            tf_package_info = get_package_info('tensorflow')
-            for rq in tf_package_info.requires:
-                if (rq.key == "grpcio"):
-                    install(str(rq).replace('grpcio', 'grpcio-tools'), install_extra_args)
-                    break
-        if (not get_package_info('grpcio-tools').name):
-            raise Exception('Error: grpcio-tools not found.')
+            install('grpcio-tools', install_extra_args)
         # Compile the protobufs
         print(f'Compiling the protobufs')
         import grpc_tools.protoc as protoc
@@ -143,6 +137,7 @@ def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir
         print(f'Installing the object detection api.')
         shutil.copy2('object_detection/packages/tf2/setup.py', '.')
         install('.', install_extra_args)
+        packages_to_check.append('object-detection')
         # Uninstall the dataclasses package installed erroneusly (incompatible) for python >=3.7 by tf-models-official
         try:
             import pkg_resources, importlib
@@ -167,6 +162,7 @@ def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir
     if (not Cfg.tf2onnx_git_repo or not Cfg.tf2onnx_git_ref):
         if (not get_package_info('tf2onnx').name):
             install('tf2onnx', install_extra_args)
+            packages_to_check.append('tf2onnx')
     else:
         if (os.path.isdir(Cfg.tf2onnx_git_repo)):
             tf2onnx_dir = Cfg.tf2onnx_git_repo
@@ -204,12 +200,22 @@ def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir
             os.chdir(tf2onnx_dir)
             # Install the converter
             install('.', install_extra_args)  # TODO: Install the package from GitHub and try with release 1.9.0
+            packages_to_check.append('tf2onnx')
             # Return to the original directory
             os.chdir(currentDir)
-        else:
-            print(f'Onnx converter {Cfg.tf2onnx_git_ref} is already installed')
-    if (not get_package_info('tf2onnx').name):
-        raise Exception('Error: tf2onnx not found.')
+
+    # Check for correct installation
+    wrong_installations = []
+    for pkg in packages_to_check:
+        try:
+            if (not get_package_info(pkg, no_deps=is_colab()).name):
+                wrong_installations.append(pkg)
+        except:
+            wrong_installations.append(pkg)
+    for pkg in wrong_installations:
+        print(f'Installation error for package {pkg}')
+    if (len(wrong_installations) > 0):
+        raise Exception('Object detection installation error.')
     print('Object detection environment installed successfully.')
 
 if __name__ == '__main__':
