@@ -38,6 +38,7 @@ class Cfg(object):
     #@markdown ---
     # TensorFlow version
     tensorflow_version = 'tensorflow==2.4.1' # or for example tf-nightly==2.5.0.dev20210315
+    tensorflow_cuda10 = 'https://www.dropbox.com/s/u0v9ktxm156oz7c/tensorflow-2.4.1-cp37-cp37m-win_amd64.whl?dl=1'
     # TensorFlow object detection api location and reference
     od_api_git_repo = 'https://github.com/darth-vader-lg/models.git'
     od_api_git_ref = 'odv2.4.0'

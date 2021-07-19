@@ -1,6 +1,5 @@
 ﻿using Python.Runtime;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -184,7 +183,7 @@ namespace ODModelBuilderTF
          InitPythonEngine();
          // Check for missing requirements
          var reinit = false;
-         if (zipEnv == null && Path.GetFileName(Path.GetDirectoryName(virtualEnvPath)).ToLower() != "odmodelbuildertf_py") {
+         if (Path.GetFileName(Path.GetDirectoryName(virtualEnvPath)).ToLower() != "odmodelbuildertf_py") {
             // Read the requirements file
             var requirementsRes = Assembly.GetExecutingAssembly().GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("requirements.txt"));
             using var requirementsContent = Assembly.GetExecutingAssembly().GetManifestResourceStream(requirementsRes);
@@ -198,15 +197,19 @@ namespace ODModelBuilderTF
                   MainScope.Import(PythonEngine.ModuleFromString("utilities", GetPythonScript("utilities.py")));
                   MainScope.Import(PythonEngine.ModuleFromString("od_install", GetPythonScript("od_install.py")));
                   MainScope.Import(PythonEngine.ModuleFromString("install_virtual_environment", GetPythonScript("install_virtual_environment.py")));
-                  var missing = ((dynamic)MainScope).install_virtual_environment.check_requirements(requirements: tempRequirements, no_deps: true);
-                  if (missing.Length() > 0) {
-                     reinit = true;
-                     ((dynamic)MainScope).install_virtual_environment.install_virtual_environment(
-                        env_name: virtualEnvPath,
-                        requirements: tempRequirements,
-                        no_cache: true,
-                        custom_tf_dir: Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Packages"));
-                  }
+#if DEBUG
+                  var noCache = false;
+#else
+                  var noCache = true;
+#endif
+                  var installed = ((dynamic)MainScope).install_virtual_environment.install_virtual_environment(
+                     env_name: virtualEnvPath,
+                     requirements: tempRequirements,
+                     no_cache: noCache,
+                     custom_tf_dir: Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Packages"));
+                  if (installed < 0)
+                     throw new Exception("Error installing the environment");
+                  reinit = installed > 0;
                }
             }
             finally {
@@ -346,6 +349,6 @@ namespace ODModelBuilderTF
             }
          }, cancel);
       }
-      #endregion
+#endregion
    }
 }
