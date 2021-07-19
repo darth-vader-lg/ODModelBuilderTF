@@ -23,9 +23,12 @@ def config_train_pipeline(prm: TrainParameters):
     output_file = prm.pipeline_config_path
     if (not output_file):
         output_file = prm.pipeline_config_path = os.path.join(prm.annotations_dir, 'pipeline.config')
+    if (not os.path.exists(output_file)):
         pre_trained_cfg_file = os.path.join(
             pre_trained_model_dir,
             'pipeline.config')
+        print(f'Warning: {output_file} file does not exist;')
+        print(f'It will be copied from {pre_trained_cfg_file}')
         shutil.copy2(pre_trained_cfg_file, output_file)
     # Read the number of labels
     label_dict = label_map_util.get_label_map_dict(os.path.join(prm.annotations_dir, 'label_map.pbtxt'))
