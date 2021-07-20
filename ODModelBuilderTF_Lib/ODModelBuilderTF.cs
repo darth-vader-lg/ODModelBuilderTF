@@ -98,6 +98,10 @@ namespace ODModelBuilderTF
                }
             }
             if (extract) {
+               var cuda10MarkerFile = Path.Combine(virtualEnvPath, "tensorflow_cuda10.txt");
+               if (File.Exists(cuda10MarkerFile)) {
+                  try { File.Delete(cuda10MarkerFile); } catch { }
+               }
                Trace.WriteLine("Preparing the environment");
                archive.ExtractToDirectory(virtualEnvPath, true);
             }
