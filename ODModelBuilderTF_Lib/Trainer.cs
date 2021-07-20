@@ -257,8 +257,6 @@ namespace ODModelBuilderTF
       /// <param name="cancel">Cancellation token</param>
       public void Train(CancellationToken cancel)
       {
-         // Initialize system
-         ODModelBuilderTF.Init(true, true);
          // Check arguments
          if (string.IsNullOrWhiteSpace(Opt.TrainImagesFolder))
             throw new ArgumentNullException(nameof(Opt.TrainImagesFolder), "Unspecified train images directory");
@@ -276,6 +274,8 @@ namespace ODModelBuilderTF
          var delAnnotationDir = string.IsNullOrWhiteSpace(Opt.TrainRecordsFolder);
          var annotationsDir = !string.IsNullOrWhiteSpace(Opt.TrainRecordsFolder) ? Opt.TrainRecordsFolder : Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
          try {
+            // Initialize system
+            ODModelBuilderTF.Init(true, true);
             // Acquire the GIL
             using var gil = Py.GIL();
             // Create a new scope

@@ -90,6 +90,7 @@ def install_virtual_environment(env_name: str=env_name, requirements='requiremen
         if (base_packages_installed):
             return
         install('pip', ['--upgrade', '-c', requirements])
+        install('setuptools', ['-c', requirements])
         installed_packages = installed_packages + 1
         base_packages_installed = True
     # Check of missing packages
@@ -157,4 +158,4 @@ if __name__ == '__main__':
         help='Requirements file'
     )
     args = parser.parse_args()
-    sys.exit(0 if install_virtual_environment(env_name, requirements=args.requirements, no_cache=args.no_cache, no_custom_tf=args.no_custom_tf, custom_tf_dir=args.custom_tf_dir) >= 0 else -1)
+    sys.exit(install_virtual_environment(env_name, requirements=args.requirements, no_cache=args.no_cache, no_custom_tf=args.no_custom_tf, custom_tf_dir=args.custom_tf_dir))

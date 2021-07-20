@@ -33,6 +33,23 @@ if (-not(Test-Path -PathType Container $scriptRoot\env)) {
 # Set the path to the python environment
 $Env:Path = "$scriptRoot\env;$scriptRoot\env\Scripts;$scriptRoot\env\DLLs;$scriptRoot\env\Lib;$scriptRoot\env\Lib\site-packages;$Env:Path"
 # Install the environment
-python.exe install_virtual_environment.py --requirements "$scriptRoot\requirements.txt" --no-custom-tf
+try {
+    Push-Location $scriptRoot
+    python.exe install_virtual_environment.py --requirements "$scriptRoot\requirements.txt" --no-custom-tf
+    $installedCount = $LASTEXITCODE
+    if (($installedCount -ne 0) -or (($installedCount -eq 0) -and -not(Test-Path $scriptRoot\env\env.info))) {
+        if ($installedCount -ge 0) {
+            python -m pip freeze >$scriptRoot\env\env.info
+            $installedCount = 0
+        }
+        else {
+            Remove-Item $scriptRoot\env\env.info
+        }
+    }
+    Exit $installedCount
+}
+catch {
+    Pop-Location
+}
 if ($LASTEXITCODE) { Exit $LASTEXITCODE }
 Exit 0

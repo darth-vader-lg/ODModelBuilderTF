@@ -51,6 +51,8 @@ namespace ODModelBuilderTF
          if (!Directory.Exists(Opt.TrainFolder))
             throw new ArgumentNullException(nameof(Opt.TrainFolder), "The train directory doesn't exist");
          try {
+            // Initialize system
+            ODModelBuilderTF.Init(true, true);
             // Acquire the GIL
             using var gil = Py.GIL();
             // Create a new scope

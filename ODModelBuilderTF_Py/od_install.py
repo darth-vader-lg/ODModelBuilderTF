@@ -26,20 +26,14 @@ def install_object_detection(requirements:str=None, no_cache=True):
     # List of packages to check at the end of installation
     packages_to_check = []
         
-    # Install pycocotools. It must be installed as first for some problems building on Windows.
+    # Install pycocotools from wheel on Windows due to some problems with the official package.
     if (not get_package_info('pycocotools').name):
-        # For some reasons the package doesn't function if installed by wheel on Windows.
-        # So temporary uninstall wheel
-        reinstall_wheel = False
-        if (get_package_info('wheel').name):
-            uninstall('wheel')
-            reinstall_wheel = True
-        install('pycocotools', install_extra_args)
+        import platform
+        if (platform.system() == "Windows"):
+            install('Packages/pycocotools-2.0.2-cp37-cp37m-win_amd64.whl', install_extra_args)
+        else:
+            install('pycocotools', install_extra_args)
         packages_to_check.append('pycocotools')
-        # Reinstall wheel
-        if (reinstall_wheel):
-            install('wheel', install_extra_args)
-            packages_to_check.append('wheel')
 
     # Install TensorFlow
     is_installed = False
@@ -215,7 +209,7 @@ def install_custom_tensorflow(requirements:str=None, no_cache=True, custom_tf_di
     # Check if the custom TensorFlow is already installed or not needed
     marker_file = os.path.join(os.path.split(sys.executable)[0], 'tensorflow_cuda10.txt')
     if (os.path.exists(marker_file) or not Cfg.tensorflow_cuda10):
-        return
+        return 0
     # Read CUDA version
     is_cuda_10 = False
     try:

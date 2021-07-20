@@ -57,6 +57,8 @@ namespace ODModelBuilderTF
          if (string.IsNullOrWhiteSpace(Opt.OutputFolder))
             throw new ArgumentNullException(nameof(Opt.OutputFolder), "Unspecified output directory");
          try {
+            // Initialize system
+            ODModelBuilderTF.Init(true, true);
             // Acquire the GIL
             using var gil = Py.GIL();
             // Create a new scope

@@ -90,10 +90,10 @@ namespace ODModelBuilderTF
             var archive = new ZipArchive(zipEnv);
             var extract = !Directory.Exists(virtualEnvPath);
             if (!extract) {
-               var buildTimeFile = Path.Combine(virtualEnvPath, "build-time.txt");
+               var buildTimeFile = Path.Combine(virtualEnvPath, "env.info");
                extract |= !File.Exists(buildTimeFile);
                if (!extract) {
-                  var arcBuildTimeFile = archive.GetEntry("build-time.txt");
+                  var arcBuildTimeFile = archive.GetEntry("env.info");
                   extract |= arcBuildTimeFile.LastWriteTime > File.GetLastWriteTime(buildTimeFile);
                }
             }
