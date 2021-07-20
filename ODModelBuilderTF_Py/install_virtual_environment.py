@@ -32,17 +32,22 @@ def check_requirements(requirements='requirements.txt', exclude=(), no_deps=True
             missing.append(r)
     return missing
 
-def install_virtual_environment(env_name: str=env_name, requirements='requirements.txt', no_cache=True, custom_tf_dir=None):
+def install_virtual_environment(env_name: str=env_name, requirements='requirements.txt', no_cache=True, no_custom_tf=False, custom_tf_dir=None):
     """
     Install the virtual environment.
     Keyword arguments:
     env_name        -- the name of the virtual environment
     no_cache        -- disable caching of the packages
+    no_custom_tf    -- disable installation of the custom TensorFlow also if it's needed
     custom_tf_dir   -- directory containing special tensorflow builds
+    -
+    returns the number of installed packages
     """
     import  os
     from    pathlib import Path
     import  subprocess
+    # Number of installed packages
+    installed_packages = 0
     # Creation of the virtual environment
     env_name = str(Path(env_name).absolute().resolve())
     script_dir = 'Scripts' if ('win32' in sys.platform) else 'bin'
@@ -81,15 +86,19 @@ def install_virtual_environment(env_name: str=env_name, requirements='requiremen
     base_packages_installed = False
     def _install_base_packages():
         nonlocal base_packages_installed
+        nonlocal installed_packages
         if (base_packages_installed):
             return
         install('pip', ['--upgrade', '-c', requirements])
+        install('setuptools', ['-c', requirements])
+        installed_packages = installed_packages + 1
         base_packages_installed = True
     # Check of missing packages
     missing = check_requirements(requirements=requirements, no_deps=True) if (os.path.isfile(requirements)) else []
     # Installation of the requirements
     if (force_install_requirements or len(missing) > 0):
         if (len(missing) > 0):
+            installed_packages = installed_packages + len(missing)
             print('Missing requirements:')
             for r in missing:
                 print(r)
@@ -98,7 +107,7 @@ def install_virtual_environment(env_name: str=env_name, requirements='requiremen
         try:
             _install_base_packages()
             from od_install import install_object_detection
-            install_object_detection(requirements=requirements, no_cache=no_cache, custom_tf_dir=custom_tf_dir)
+            install_object_detection(requirements=requirements, no_cache=no_cache)
         except subprocess.CalledProcessError as exc:
             print("Error! Couldn't install object detection api.")
             print(exc)
@@ -115,7 +124,11 @@ def install_virtual_environment(env_name: str=env_name, requirements='requiremen
         pkg_resources.require('dataclasses')
         execute_script(['-m', 'pip', 'uninstall', '-y', 'dataclasses'])
     except Exception as e: pass
-    return 0
+    # Install the custom tensorflow if needed
+    if (not no_custom_tf):
+        from od_install import install_custom_tensorflow
+        installed_packages = installed_packages + install_custom_tensorflow(requirements=requirements, no_cache=no_cache, custom_tf_dir=custom_tf_dir)
+    return installed_packages
 
 if __name__ == '__main__':
     import  os
@@ -133,10 +146,16 @@ if __name__ == '__main__':
         help='Do not cache the pip packages'
     )
     parser.add_argument(
+        '--no-custom-tf',
+        dest='no_custom_tf',
+        action='store_true',
+        help='Disable installation of the custom TensorFlow also if it`s needed'
+    )
+    parser.add_argument(
         '--requirements',
         dest='requirements',
         default=os.path.join(os.path.dirname(__file__), 'requirements.txt'),
         help='Requirements file'
     )
     args = parser.parse_args()
-    sys.exit(install_virtual_environment(env_name, no_cache=args.no_cache, requirements=args.requirements, custom_tf_dir=args.custom_tf_dir))
+    sys.exit(install_virtual_environment(env_name, requirements=args.requirements, no_cache=args.no_cache, no_custom_tf=args.no_custom_tf, custom_tf_dir=args.custom_tf_dir))

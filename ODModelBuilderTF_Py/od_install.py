@@ -10,9 +10,11 @@ except: pass
 try:    from    utilities import *
 except: pass
 
-def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir=None):
+def install_object_detection(requirements:str=None, no_cache=True):
     """
     Install a well known environment.
+    requirements    -- the requirements file
+    no_cache        -- disable caching of the packages
     """
     install_extra_args = []
     if (no_cache):
@@ -24,20 +26,14 @@ def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir
     # List of packages to check at the end of installation
     packages_to_check = []
         
-    # Install pycocotools. It must be installed as first for some problems building on Windows.
+    # Install pycocotools from wheel on Windows due to some problems with the official package.
     if (not get_package_info('pycocotools').name):
-        # For some reasons the package doesn't function if installed by wheel on Windows.
-        # So temporary uninstall wheel
-        reinstall_wheel = False
-        if (get_package_info('wheel').name):
-            uninstall('wheel')
-            reinstall_wheel = True
-        install('pycocotools', install_extra_args)
+        import platform
+        if (platform.system() == "Windows"):
+            install('Packages/pycocotools-2.0.2-cp37-cp37m-win_amd64.whl', install_extra_args)
+        else:
+            install('pycocotools', install_extra_args)
         packages_to_check.append('pycocotools')
-        # Reinstall wheel
-        if (reinstall_wheel):
-            install('wheel', install_extra_args)
-            packages_to_check.append('wheel')
 
     # Install TensorFlow
     is_installed = False
@@ -48,24 +44,7 @@ def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir
         is_installed = get_package_info('tensorflow').version == tf_comparing_version
     except: pass
     if (not is_installed):
-        tensorflow_package = Cfg.tensorflow_version
-        if (custom_tf_dir and Path(custom_tf_dir).is_dir()):
-            try:
-                # Read CUDA version
-                import subprocess
-                output = subprocess.check_output(['nvcc', '--version'], shell=True).decode()
-                if ('V10.1' in output):
-                    found = [f for f in Path(custom_tf_dir).glob('*.whl') if tf_comparing_version in Path(f).stem]
-                    if (len(found) == 1):
-                        tensorflow_package = str(found[0])
-                        print(f'Info: installing a custom tensorflow located at {tensorflow_package}')
-                    else:
-                        print(f'Warning: couldn\'t find the special version of tensorflow-{tf_comparing_version}')
-                        print('Installing the standard.')
-            except:
-                print(f'Warning: couldn\'t find cuda')
-                print('Installing the standard tensorflow.')
-        install(tensorflow_package, install_extra_args)
+        install(Cfg.tensorflow_version, install_extra_args)
         packages_to_check.append('tensorflow')
     
     # Install pygit2
@@ -217,6 +196,60 @@ def install_object_detection(requirements:str=None, no_cache=True, custom_tf_dir
     if (len(wrong_installations) > 0):
         raise Exception('Object detection installation error.')
     print('Object detection environment installed successfully.')
+
+def install_custom_tensorflow(requirements:str=None, no_cache=True, custom_tf_dir=None):
+    """
+    Install the custom tensorflow with cuda 10 support if needed.
+    requirements    -- the requirements file
+    no_cache        -- disable caching of the packages
+    custom_tf_dir   -- directory containing special tensorflow builds
+    -
+    returns the number of installed packages
+    """
+    # Check if the custom TensorFlow is already installed or not needed
+    marker_file = os.path.join(os.path.split(sys.executable)[0], 'tensorflow_cuda10.txt')
+    if (os.path.exists(marker_file) or not Cfg.tensorflow_cuda10):
+        return 0
+    # Read CUDA version
+    is_cuda_10 = False
+    try:
+        import subprocess
+        output = subprocess.check_output(['nvcc', '--version'], shell=True).decode()
+        is_cuda_10 = 'V10.1' in output
+    except: pass
+    # Check if Cuda is enabled
+    if (not is_cuda_10):
+        return 0
+    # Check if a local package is present in the custom package directory
+    tensorflow_package = Cfg.tensorflow_cuda10
+    if (custom_tf_dir and os.path.exists(custom_tf_dir)):
+        tf_comparing_version = Cfg.tensorflow_version.replace('tensorflow==', '')
+        tf_comparing_version = tf_comparing_version.replace('tf-nightly==', '')
+        tf_comparing_version = tf_comparing_version.replace('.dev', '-dev')
+        found = [f for f in Path(custom_tf_dir).glob('*.whl') if tf_comparing_version in Path(f).stem]
+        if (len(found) == 1):
+            tensorflow_package = str(found[0])
+    # Install the custom TensorFlow
+    install_extra_args = ['--force', '--no-deps']
+    if (no_cache):
+        install_extra_args.append('--no-cache')
+    if (requirements):
+        install_extra_args.append('-c')
+        install_extra_args.append(os.path.abspath(requirements))
+    print(f'Info: installing a custom tensorflow located at {tensorflow_package}')
+    install(tensorflow_package, install_extra_args)
+    if (not get_package_info('tensorflow', no_deps=is_colab()).name):
+        raise Exception('Error installing the custom tensorflow.')
+    # Uninstall the dataclasses package installed erroneusly (incompatible) for python >=3.7 by TensorFlow
+    try:
+        import pkg_resources, importlib
+        importlib.reload(pkg_resources)
+        pkg_resources.require('dataclasses')
+        uninstall('dataclasses')
+    except Exception as e: pass
+    with open(marker_file, "w") as f:
+        f.write(Cfg.tensorflow_cuda10)
+    return 1
 
 if __name__ == '__main__':
     install_object_detection(os.path.join(os.path.dirname(__file__), 'requirements.txt'))

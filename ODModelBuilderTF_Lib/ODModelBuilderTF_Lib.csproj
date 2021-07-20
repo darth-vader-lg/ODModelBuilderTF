@@ -5,7 +5,7 @@
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
     <AssemblyName>ODModelBuilderTF</AssemblyName>
     <RootNamespace>ODModelBuilderTF</RootNamespace>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>Train, evaluation, export library for TensorFlow object detection</Description>
     <Copyright>Copyright 2021 darth-vader-lg</Copyright>
     <PackageLicenseExpression />
@@ -22,7 +22,7 @@
   <PropertyGroup>
     <PythonProject>$(ProjectDir)..\ODModelBuilderTF_Py\</PythonProject>
     <PythonProjectEnv>$(PythonProject)env\</PythonProjectEnv>
-    <PythonProjectOut>$(PythonProjectEnv)build-time.txt</PythonProjectOut>
+    <PythonProjectOut>$(PythonProjectEnv)env.info</PythonProjectOut>
   </PropertyGroup>
   
   <ItemGroup>
@@ -90,7 +90,7 @@
   
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
   </Target>
-
+  
   <!-- Uncomment to add extra files in the output folder -->
   <!--
   <PropertyGroup>
