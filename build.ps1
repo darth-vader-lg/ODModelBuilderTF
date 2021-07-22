@@ -77,6 +77,14 @@ function Build {
             @properties
     }
     if (-not $clean) {
+        if ($restore) {
+            if ($projects) {
+                dotnet restore $projects
+            }
+            else {
+                dotnet restore
+            }
+        }
         msbuild `
             $bl `
             $platformArg `
