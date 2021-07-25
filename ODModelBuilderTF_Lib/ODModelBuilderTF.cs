@@ -195,12 +195,19 @@ namespace ODModelBuilderTF
          if (Path.GetFileName(Path.GetDirectoryName(virtualEnvPath)).ToLower() != "odmodelbuildertf_py") {
             // Read the requirements file
             var requirementsRes = Assembly.GetExecutingAssembly().GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("requirements.txt"));
+            var pycocotoolsRes = Assembly.GetExecutingAssembly().GetManifestResourceNames().FirstOrDefault(n => n.Contains("pycocotools"));
             using var requirementsContent = Assembly.GetExecutingAssembly().GetManifestResourceStream(requirementsRes);
             var tempRequirements = Path.GetTempFileName();
             try {
-               using var writer = File.Create(tempRequirements);
-               requirementsContent.CopyTo(writer);
-               writer.Close();
+               using var requirementFile = File.Create(tempRequirements);
+               requirementsContent.CopyTo(requirementFile);
+               requirementFile.Close();
+               if (zipEnv == null) {
+                  var pycocotoolsFileName = pycocotoolsRes[pycocotoolsRes.IndexOf("pycocotools")..];
+                  using var pycocotoolsFile = File.Create(Path.Combine(virtualEnvPath, pycocotoolsFileName));
+                  using var pycocotoolsContent = Assembly.GetExecutingAssembly().GetManifestResourceStream(pycocotoolsRes);
+                  pycocotoolsContent.CopyTo(pycocotoolsFile);
+               }
                using (Py.GIL()) {
                   MainScope.Import(PythonEngine.ModuleFromString("default_cfg", GetPythonScript("default_cfg.py")));
                   MainScope.Import(PythonEngine.ModuleFromString("utilities", GetPythonScript("utilities.py")));

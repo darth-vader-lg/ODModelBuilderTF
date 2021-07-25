@@ -55,6 +55,7 @@
     <EmbeddedResource Include="$(PythonProject)train_pipeline.py" Link="py\train_pipeline.py" />
     <EmbeddedResource Include="$(PythonProject)train_tensorboard.py" Link="py\train_tensorboard.py" />
     <EmbeddedResource Include="$(PythonProject)utilities.py" Link="py\utilities.py" />
+    <EmbeddedResource Include="$(PythonProject)Packages\pycocotools-2.0.2-cp37-cp37m-win_amd64.whl" Link="py\Packages\pycocotools-2.0.2-cp37-cp37m-win_amd64.whl" />
     <EmbeddedResource Include="$(TargetDir)env.zip" Condition="$(ConfigurationName) != 'Debug'" />
   </ItemGroup>
 

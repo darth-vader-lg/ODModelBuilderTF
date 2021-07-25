@@ -111,7 +111,7 @@ def install_virtual_environment(env_name: str=env_name, requirements='requiremen
         except subprocess.CalledProcessError as exc:
             print("Error! Couldn't install object detection api.")
             print(exc)
-            return exc.returncode
+            return -1
         # Check installation
         missing = check_requirements(requirements=requirements, no_deps=True) if (os.path.isfile(requirements)) else []
         if (len(missing) > 0):

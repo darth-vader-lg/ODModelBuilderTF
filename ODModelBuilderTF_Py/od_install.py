@@ -30,7 +30,12 @@ def install_object_detection(requirements:str=None, no_cache=True):
     if (not get_package_info('pycocotools').name):
         import platform
         if (platform.system() == "Windows"):
-            install('Packages/pycocotools-2.0.2-cp37-cp37m-win_amd64.whl', install_extra_args)
+            if (os.path.exists('Packages/pycocotools-2.0.2-cp37-cp37m-win_amd64.whl')):
+                install('Packages/pycocotools-2.0.2-cp37-cp37m-win_amd64.whl', install_extra_args)
+            else:
+                pycocotools_path = os.path.join(os.path.split(sys.executable)[0], 'pycocotools-2.0.2-cp37-cp37m-win_amd64.whl')
+                if (os.path.exists(pycocotools_path)):
+                    install(pycocotools_path, install_extra_args)
         else:
             install('pycocotools', install_extra_args)
         packages_to_check.append('pycocotools')
