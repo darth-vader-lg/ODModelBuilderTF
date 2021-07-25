@@ -10,6 +10,7 @@ class TrainParameters(BaseParameters):
     def __init__(self):
         """ Constructor """
         super().__init__()
+        self._pre_trained_model_dir = None
         self._pipeline_config_path = os.path.join(self.annotations_dir, 'pipeline.config')
         self._num_train_steps = Cfg.num_train_steps if Cfg.num_train_steps > -1 else None
         self._eval_on_train_data = False
@@ -21,8 +22,12 @@ class TrainParameters(BaseParameters):
         self._batch_size = Cfg.batch_size if Cfg.batch_size > 1 else None
         self._tensorboard_port = 8080
         self._is_path.extend([
-            'checkpoint_dir'])
+            'pre_trained_model_dir', 'pipeline_config_path'])
     default = None
+    @property
+    def pre_trained_model_dir(self): return self._pre_trained_model_dir
+    @pre_trained_model_dir.setter
+    def pre_trained_model_dir(self, value): self._pre_trained_model_dir = value
     @property
     def pipeline_config_path(self): return self._pipeline_config_path
     @pipeline_config_path.setter

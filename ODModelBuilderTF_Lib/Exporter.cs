@@ -1,7 +1,6 @@
 ﻿using Python.Runtime;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading;
@@ -21,17 +20,29 @@ namespace ODModelBuilderTF
       #endregion
       #region Events
       /// <summary>
-      /// Frozen graph exported event
+      /// Exported frozen graph event
       /// </summary>
-      public event ExportEventHandler FrozenGraphExported;
+      public event ExportEventHandler ExportedFrozenGraph;
       /// <summary>
-      /// Onnx exported event
+      /// Exported frozen graph configuration event
       /// </summary>
-      public event ExportEventHandler OnnxExported;
+      public event ExportEventHandler ExportedFrozenGraphConfig;
       /// <summary>
-      /// Saved model exported event
+      /// Exported Onnx event
       /// </summary>
-      public event ExportEventHandler SavedModelExported;
+      public event ExportEventHandler ExportedOnnx;
+      /// <summary>
+      /// Exported Onnx configuration event
+      /// </summary>
+      public event ExportEventHandler ExportedOnnxConfig;
+      /// <summary>
+      /// Exported Saved model event
+      /// </summary>
+      public event ExportEventHandler ExportedSavedModel;
+      /// <summary>
+      /// Exported Saved model configuration event
+      /// </summary>
+      public event ExportEventHandler ExportedSavedModelConfig;
       #endregion
       #region Methods
       /// <summary>
@@ -87,8 +98,7 @@ namespace ODModelBuilderTF
                // Export action
                var export = new Action<dynamic>(unused_argv =>
                {
-                  // Exported saved_model callback action
-                  var savedModelCallback = new Action<dynamic>(args =>
+                  void OnExported(dynamic args, Action<ExportEventArgs> OnExportFunction)
                   {
                      // Read the data
                      string path;
@@ -96,46 +106,21 @@ namespace ODModelBuilderTF
                         path = (string)args.path;
                      // Call the event function
                      var data = new ExportEventArgs(path);
-                     OnExportedSavedModel(data);
+                     OnExportFunction(data);
                      // Set the response flags
                      using (Py.GIL())
                         args.cancel = data.Cancel || cancel.IsCancellationRequested;
-                  });
-                  // Exported frozen graph callback action
-                  var frozenGraphCallback = new Action<dynamic>(args =>
-                  {
-                     // Read the data
-                     string path;
-                     using (Py.GIL())
-                        path = (string)args.path;
-                     // Call the event function
-                     var data = new ExportEventArgs(path);
-                     OnExportedFrozenGraph(data);
-                     // Set the response flags
-                     using (Py.GIL())
-                        args.cancel = data.Cancel || cancel.IsCancellationRequested;
-                  });
-                  // Exported saved_model callback action
-                  var onnxCallback = new Action<dynamic>(args =>
-                  {
-                     // Read the data
-                     string path;
-                     using (Py.GIL())
-                        path = (string)args.path;
-                     // Call the event function
-                     var data = new ExportEventArgs(path);
-                     OnExportedOnnx(data);
-                     // Set the response flags
-                     using (Py.GIL())
-                        args.cancel = data.Cancel || cancel.IsCancellationRequested;
-                  });
-                  // Start the evaluation loop
+                  }
+                  // Start the export
                   using (Py.GIL()) {
                      export_main.export_main(
                         unused_argv,
-                        saved_model_callback: savedModelCallback,
-                        frozen_graph_callback: frozenGraphCallback,
-                        onnx_callback: onnxCallback);
+                        saved_model_callback: new Action<dynamic>(args => OnExported(args, new Action<ExportEventArgs>(e => OnExportedSavedModel(e)))),
+                        saved_model_config_callback: new Action<dynamic>(args => OnExported(args, new Action<ExportEventArgs>(e => OnExportedSavedModelConfig(e)))),
+                        frozen_graph_callback: new Action<dynamic>(args => OnExported(args, new Action<ExportEventArgs>(e => OnExportedFrozenGraph(e)))),
+                        frozen_graph_config_callback: new Action<dynamic>(args => OnExported(args, new Action<ExportEventArgs>(e => OnExportedFrozenGraphConfig(e)))),
+                        onnx_callback: new Action<dynamic>(args => OnExported(args, new Action<ExportEventArgs>(e => OnExportedOnnx(e)))),
+                        onnx_config_callback: new Action<dynamic>(args => OnExported(args, new Action<ExportEventArgs>(e => OnExportedOnnxConfig(e)))));
                   }
                });
                tf.compat.v1.app.run(export);
@@ -147,7 +132,7 @@ namespace ODModelBuilderTF
                   var pexc when pexc == Exceptions.SystemExit => new Action(() => { }),
                   var pexc when pexc == Exceptions.KeyboardInterrupt => new Action(() =>
                   {
-                     Trace.WriteLine("Interrupted by user");
+                     ODModelBuilderTF.TraceOutput("Interrupted by user");
                   }),
                   _ => new Action(() => { throw exc; })
                };
@@ -155,47 +140,86 @@ namespace ODModelBuilderTF
             }
          }
          catch (Exception exc) {
-            Trace.WriteLine(exc.ToString().Replace("\\n", Environment.NewLine));
+            ODModelBuilderTF.TraceError(exc.ToString().Replace("\\n", Environment.NewLine));
             throw;
          }
       }
       /// <summary>
-      /// Frozen graph exported function
+      /// Exported frozen graph function
       /// </summary>
       /// <param name="e">Export arguments</param>
       protected virtual void OnExportedFrozenGraph(ExportEventArgs data)
       {
          try {
-            FrozenGraphExported?.Invoke(this, data);
+            ExportedFrozenGraph?.Invoke(this, data);
          }
          catch (Exception exc) {
-            Trace.WriteLine(exc);
+            ODModelBuilderTF.TraceError(exc.ToString());
          }
       }
       /// <summary>
-      /// Onnx exported function
+      /// Exported frozen graph configuration function
+      /// </summary>
+      /// <param name="e">Export arguments</param>
+      protected virtual void OnExportedFrozenGraphConfig(ExportEventArgs data)
+      {
+         try {
+            ExportedFrozenGraphConfig?.Invoke(this, data);
+         }
+         catch (Exception exc) {
+            ODModelBuilderTF.TraceError(exc.ToString());
+         }
+      }
+      /// <summary>
+      /// Exported Onnx function
       /// </summary>
       /// <param name="e">Export arguments</param>
       protected virtual void OnExportedOnnx(ExportEventArgs data)
       {
          try {
-            OnnxExported?.Invoke(this, data);
+            ExportedOnnx?.Invoke(this, data);
          }
          catch (Exception exc) {
-            Trace.WriteLine(exc);
+            ODModelBuilderTF.TraceError(exc.ToString());
          }
       }
       /// <summary>
-      /// SavedModel exported function
+      /// Exported Onnx configuration function
+      /// </summary>
+      /// <param name="e">Export arguments</param>
+      protected virtual void OnExportedOnnxConfig(ExportEventArgs data)
+      {
+         try {
+            ExportedOnnxConfig?.Invoke(this, data);
+         }
+         catch (Exception exc) {
+            ODModelBuilderTF.TraceError(exc.ToString());
+         }
+      }
+      /// <summary>
+      /// Exported SavedModel function
       /// </summary>
       /// <param name="e">Export arguments</param>
       protected virtual void OnExportedSavedModel(ExportEventArgs data)
       {
          try {
-            SavedModelExported?.Invoke(this, data);
+            ExportedSavedModel?.Invoke(this, data);
          }
          catch (Exception exc) {
-            Trace.WriteLine(exc);
+            ODModelBuilderTF.TraceError(exc.ToString());
+         }
+      }
+      /// <summary>
+      /// Exported SavedModel configuration function
+      /// </summary>
+      /// <param name="e">Export arguments</param>
+      protected virtual void OnExportedSavedModelConfig(ExportEventArgs data)
+      {
+         try {
+            ExportedSavedModelConfig?.Invoke(this, data);
+         }
+         catch (Exception exc) {
+            ODModelBuilderTF.TraceError(exc.ToString());
          }
       }
       #endregion

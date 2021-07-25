@@ -75,6 +75,16 @@ def export_main(unused_argv, **kwargs):
     # Export the configuration files
     from export_model_config import export_model_config
     export_model_config(export_parameters, frozen_inputs, frozen_outputs)
+    # Callbacks
+    if (export_parameters.trained_checkpoint_dir):
+        if (_export_callback('saved_model_config_callback', os.path.join(export_parameters.output_directory, 'saved_model.config')).cancel):
+            return;
+    if (export_parameters.frozen_graph):
+        if (_export_callback('frozen_graph_config_callback', os.path.join(export_parameters.output_directory, export_parameters.frozen_graph)).cancel):
+            return;
+    if (export_parameters.onnx):
+        if (_export_callback('onnx_config_callback', os.path.join(export_parameters.output_directory, export_parameters.onnx)).cancel):
+            return;
 
 if __name__ == '__main__':
     if (not is_executable()):

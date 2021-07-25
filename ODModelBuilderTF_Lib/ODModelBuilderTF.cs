@@ -1,6 +1,5 @@
 ﻿using Python.Runtime;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -40,6 +39,12 @@ namespace ODModelBuilderTF
       /// Initialized status
       /// </summary>
       internal static PyScope MainScope { get; private set; }
+      #endregion
+      #region Events
+      /// <summary>
+      /// Log event
+      /// </summary>
+      public static event LogEventHandler Log;
       #endregion
       #region Methods
       /// <summary>
@@ -102,14 +107,14 @@ namespace ODModelBuilderTF
                if (File.Exists(cuda10MarkerFile)) {
                   try { File.Delete(cuda10MarkerFile); } catch { }
                }
-               Trace.WriteLine("Preparing the environment");
+               TraceOutput("Preparing the environment");
                archive.ExtractToDirectory(virtualEnvPath, true);
             }
          }
          else {
             // Check for the existence of the environment directory
             if (!Directory.Exists(virtualEnvPath)) {
-               Trace.WriteLine("Preparing the environment");
+               TraceOutput("Preparing the environment");
                // Package for setup
                var pythonNupkg = Path.Combine(virtualEnvPath, "python.zip");
                try {
@@ -263,6 +268,21 @@ namespace ODModelBuilderTF
          Initialized = true;
       }
       /// <summary>
+      /// Log message function
+      /// </summary>
+      /// <param name="message">The message</param>
+      /// <param name="type">The message type</param>
+      private static void OnLogMessage(string message, LogMessageTypes type)
+      {
+         try {
+            System.Diagnostics.Trace.WriteLine(message);
+            Log?.Invoke(new LogEventArgs(message, type));
+         }
+         catch (Exception exc) {
+            System.Diagnostics.Trace.WriteLine(exc);
+         }
+      }
+      /// <summary>
       /// Redirect the outputs of Python to string buffers
       /// </summary>
       /// <param name="scope">Python scope</param>
@@ -288,6 +308,30 @@ namespace ODModelBuilderTF
          redirectStdout = stdout;
          redirectStderr = stderr;
       }
+      /// <summary>
+      /// Trace a message
+      /// </summary>
+      /// <param name="message">Error message</param>
+      /// <param name="type">Message type</param>
+      public static void Trace(string message, LogMessageTypes type)
+      {
+         try {
+            OnLogMessage(message, type);
+         }
+         catch (Exception exc) {
+            System.Diagnostics.Trace.WriteLine(exc);
+         }
+      }
+      /// <summary>
+      /// Trace an error
+      /// </summary>
+      /// <param name="message">Error message</param>
+      public static void TraceError(string message) => Trace(message, LogMessageTypes.Error);
+      /// <summary>
+      /// Trace an output message
+      /// </summary>
+      /// <param name="message">Output message</param>
+      public static void TraceOutput(string message) => Trace(message, LogMessageTypes.Output);
       /// <summary>
       /// Trace the python's outputs
       /// </summary>
@@ -327,7 +371,7 @@ namespace ODModelBuilderTF
                         var newLen = stdout.Length;
                         if (newLen > lenOut) {
                            stdout = stdout[lenOut..];
-                           Trace.Write(stdout);
+                           TraceOutput(stdout);
                            lenOut = newLen;
                         }
                      }
@@ -342,7 +386,7 @@ namespace ODModelBuilderTF
                         var newLen = stderr.Length;
                         if (newLen > lenErr) {
                            stderr = stderr[lenErr..];
-                           Trace.Write(stderr);
+                           TraceError(stderr);
                            lenErr = newLen;
                         }
                      }
@@ -353,6 +397,6 @@ namespace ODModelBuilderTF
             }
          }, cancel);
       }
-#endregion
+      #endregion
    }
 }

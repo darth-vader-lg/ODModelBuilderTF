@@ -16,6 +16,8 @@ flags.DEFINE_string ('eval_images_dir', None, 'Path to the directory '
                      'containing the images for evaluate and their labeling xml.')
 flags.DEFINE_string ('annotations_dir', None, 'Path to the directory '
                      'containing the computed tensorflow records.')
+flags.DEFINE_string ('pre_trained_model_dir', None, 'Path to the directory '
+                     'containing the pre-trained model.')
 flags.DEFINE_integer('batch_size', 0, 'The size of batch. If < 1 it uses the '
                      'value contained in the pipeline configuration file.')
 flags.DEFINE_integer('tensorboard_port', 8080, 'The port of the tensorboard server')
@@ -41,7 +43,8 @@ def train_main(unused_argv, **kwargs):
         print('Train parameters not set. Skipping.')
         return
     init_train_environment(train_parameters)
-    download_pretrained_model(train_parameters)
+    if (not train_parameters.pre_trained_model_dir):
+        download_pretrained_model(train_parameters)
     create_tf_records(train_parameters)
     config_train_pipeline(train_parameters)
     # Import the train main function

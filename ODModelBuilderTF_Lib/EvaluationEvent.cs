@@ -21,6 +21,7 @@ namespace ODModelBuilderTF
       /// <summary>
       /// Constructor
       /// </summary>
+      /// <param name="metrics">Evaluation metrics dictionary</param>
       public EvaluationEventArgs(IEnumerable<KeyValuePair<string, double>> metrics)
       {
          Metrics = new Dictionary<string, double>(metrics);

@@ -105,7 +105,7 @@ namespace ODModelBuilderTF
                      var data = new EvaluationTimeoutEventArgs();
                      OnEvaluationTimeout(data);
                      using (Py.GIL())
-                        args.cancel = cancel.IsCancellationRequested;
+                        args.cancel = data.Cancel || cancel.IsCancellationRequested;
                   });
                   // Start the evaluation loop
                   using (Py.GIL())
@@ -120,7 +120,7 @@ namespace ODModelBuilderTF
                   var pexc when pexc == Exceptions.SystemExit => new Action(() => { }),
                   var pexc when pexc == Exceptions.KeyboardInterrupt => new Action(() =>
                   {
-                     Trace.WriteLine("Interrupted by user");
+                     ODModelBuilderTF.TraceOutput("Interrupted by user");
                   }),
                   _ => new Action(() => { throw exc; })
                };
@@ -128,7 +128,7 @@ namespace ODModelBuilderTF
             }
          }
          catch (Exception exc) {
-            Trace.WriteLine(exc.ToString().Replace("\\n", Environment.NewLine));
+            ODModelBuilderTF.TraceError(exc.ToString().Replace("\\n", Environment.NewLine));
             throw;
          }
       }
@@ -142,7 +142,7 @@ namespace ODModelBuilderTF
             Evaluation?.Invoke(this, e);
          }
          catch (Exception exc) {
-            Trace.WriteLine(exc);
+            ODModelBuilderTF.TraceError(exc.ToString());
          }
       }
       /// <summary>
@@ -155,7 +155,7 @@ namespace ODModelBuilderTF
             EvaluationTimeout?.Invoke(this, e);
          }
          catch (Exception exc) {
-            Trace.WriteLine(exc);
+            ODModelBuilderTF.TraceError(exc.ToString());
          }
       }
       #endregion

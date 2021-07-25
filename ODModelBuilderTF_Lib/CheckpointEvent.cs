@@ -14,6 +14,10 @@ namespace ODModelBuilderTF
       /// </summary>
       public bool Cancel { get; set; }
       /// <summary>
+      /// Export the checkpoint if set by the event receiver
+      /// </summary>
+      public bool Export { get; set; }
+      /// <summary>
       /// Path of the latest generated checkpoint
       /// </summary>
       public string LatestCheckpointPath { get; }
@@ -28,10 +32,12 @@ namespace ODModelBuilderTF
       /// </summary>
       /// <param name="latestCheckpointPath">Path of the latest generated checkpoint</param>
       /// <param name="checkpointPaths">Paths of the generated checkpoints</param>
-      public CheckpointEventArgs(string latestCheckpointPath, IEnumerable<string> checkpointPaths)
+      /// <param name="export">Enable export of the checkpoint</param>
+      public CheckpointEventArgs(string latestCheckpointPath, IEnumerable<string> checkpointPaths, bool export)
       {
          LatestCheckpointPath = latestCheckpointPath;
          CheckpointPaths = checkpointPaths.ToArray();
+         Export = export;
       }
       #endregion
    }
