@@ -1,31 +1,43 @@
 try:    from base_parameters import BaseParameters
 except: pass
+import  os
 import  subprocess
 import  sys
-import  time
-try:    from utilities import *
-except: pass
+
+tensorboard_process = None
+tensorboard_start_count = 0
 
 def start_tensorboard(prm: BaseParameters):
-    log_dir = prm.model_dir
-    error = True
-    paths = [
-        'tensorboard',
-        os.path.join(os.path.dirname(sys.executable), 'tensorboard'),
-        os.path.join(os.path.dirname(sys.executable), 'Scripts', 'tensorboard'),
-        os.path.join(getattr(sys, '_MEIPASS', sys.executable), 'tensorboard')] # TODO: Remove since executable configuration doesn't exist anymore
-    for tensorboard_path in paths:
-        try:
-            cmd = [tensorboard_path]
-            cmd.extend(['--port', str(prm.tensorboard_port)])
-            cmd.extend(['--logdir', log_dir])
-            subprocess.Popen(cmd, stdout = subprocess.PIPE, universal_newlines = True)
-            error = False
-            break
-        except:
-            pass
-    if (error):
-        print('Warning: cannot start tensorboard')
+    if (prm.tensorboard_port <= 0 or not prm.model_dir):
+        return
+    global tensorboard_process
+    if (tensorboard_process):
+        return;
+    try:
+        cmd = [sys.executable, '-m', 'tensorboard.main']
+        cmd.extend(['--port', str(prm.tensorboard_port)])
+        cmd.extend(['--logdir', prm.model_dir])
+        env = { **os.environ, 'PATH': os.pathsep.join(sys.path) + os.pathsep + os.environ['PATH'] }
+        creationflags = subprocess.CREATE_NO_WINDOW if 'CREATE_NO_WINDOW' in dir(subprocess) else 0
+        p = subprocess.Popen(cmd, env=env, cwd=os.getcwd(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,shell=False,creationflags=creationflags)
+        p_result = p.poll()
+        if (p_result != None):
+            print(f'Warning: cannot start tensorboard. Error code {p_result}')
+            return None
+        else:
+            tensorboard_process = p
+            return p
+    except Exception as exc:
+        print(f'Warning: cannot start tensorboard. Exception {exc}')
+    return None
+
+def stop_tensorboard(process):
+    global tensorboard_process
+    if (not tensorboard_process or tensorboard_process != process):
+        return
+    tensorboard_process.terminate()
+    tensorboard_process.wait()
+    tensorboard_process = None
 
 if __name__ == '__main__':
     prm = ('prm' in locals() and isinstance(prm, BaseParameters) and prm) or BaseParameters.default

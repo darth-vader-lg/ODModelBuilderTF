@@ -29,10 +29,14 @@ def eval_main(unused_argv, **kwargs):
     from object_detection import model_main_tf2
     eval_parameters.update_flags()
     # Start the tensorboard
-    from train_tensorboard import start_tensorboard
-    start_tensorboard(eval_parameters)
+    from train_tensorboard import start_tensorboard, stop_tensorboard
+    tb_process = start_tensorboard(eval_parameters)
     # Execute the evaluation
-    model_main_tf2.main(unused_argv, **kwargs)
+    try:
+        model_main_tf2.main(unused_argv, **kwargs)
+    finally:
+        # Stop the tensorboard
+        stop_tensorboard(tb_process)
 
 if __name__ == '__main__':
     if (not is_executable()):

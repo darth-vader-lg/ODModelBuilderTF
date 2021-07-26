@@ -53,10 +53,14 @@ def train_main(unused_argv, **kwargs):
     if (train_parameters.num_train_steps < 0):
         setattr(flags.FLAGS, 'num_train_steps', None)
     # Start the tensorboard
-    from train_tensorboard import start_tensorboard
-    start_tensorboard(train_parameters)
+    from train_tensorboard import start_tensorboard, stop_tensorboard
+    tb_process = start_tensorboard(train_parameters)
     # Execute the train
-    model_main_tf2.main(unused_argv, **kwargs)
+    try:
+        model_main_tf2.main(unused_argv, **kwargs)
+    finally:
+        # Stop the tensorboard
+        stop_tensorboard(tb_process)
 
 if __name__ == '__main__':
     if (not is_executable()):
