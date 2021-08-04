@@ -83,7 +83,7 @@ namespace ODModelBuilderTF
             return;
          // Virtual environment's full path
          var assemblyName = Assembly.GetExecutingAssembly().GetName();
-         virtualEnvPath = string.IsNullOrEmpty(virtualEnvPath) ? Path.Combine(Path.GetTempPath(), $"{assemblyName.Name}-{assemblyName.Version}") : Path.GetFullPath(virtualEnvPath);
+         virtualEnvPath = string.IsNullOrEmpty(virtualEnvPath) ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), $"{assemblyName.Name}-{assemblyName.Version}") : Path.GetFullPath(virtualEnvPath);
          // Create a mutex to avoid overlapped initializations
          using var mutex = new Mutex(true, virtualEnvPath.Replace("\\", "_").Replace(":", "-"));
          // Name of the downloaded Python zip file and the get pip script
