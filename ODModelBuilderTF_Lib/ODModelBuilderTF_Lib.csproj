@@ -6,7 +6,7 @@
     <AssemblyName>ODModelBuilderTF</AssemblyName>
     <RootNamespace>ODModelBuilderTF</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Description>Train, evaluation, export library for TensorFlow object detection.</Description>
+    <Description>DotNet Train, evaluation, export library for TensorFlow object detection.</Description>
     <Copyright>Copyright 2021 Luigi Generale</Copyright>
     <PackageLicenseExpression />
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
