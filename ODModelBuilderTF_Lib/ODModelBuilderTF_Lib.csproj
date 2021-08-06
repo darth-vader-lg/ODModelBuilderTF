@@ -6,11 +6,11 @@
     <AssemblyName>ODModelBuilderTF</AssemblyName>
     <RootNamespace>ODModelBuilderTF</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Description>Train, evaluation, export library for TensorFlow object detection</Description>
-    <Copyright>Copyright 2021 darth-vader-lg</Copyright>
+    <Description>DotNet Train, evaluation, export library for TensorFlow object detection.</Description>
+    <Copyright>Copyright 2021 Luigi Generale</Copyright>
     <PackageLicenseExpression />
-    <PackageLicenseFile>licence.txt</PackageLicenseFile>
-    <PackageProjectUrl>https://github.com/darth-vader-lg</PackageProjectUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/darth-vader-lg/ODModelBuilderTF</PackageProjectUrl>
     <RepositoryUrl>https://github.com/darth-vader-lg/ODModelBuilderTF.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <NeutralLanguage />
@@ -23,10 +23,19 @@
     <PythonProject>$(ProjectDir)..\ODModelBuilderTF_Py\</PythonProject>
     <PythonProjectEnv>$(PythonProject)env\</PythonProjectEnv>
     <PythonProjectOut>$(PythonProjectEnv)env.info</PythonProjectOut>
+    <Version>1.0.0</Version>
+    <Authors>Luigi Generale</Authors>
+    <Product>ODModelBuilderTF Library</Product>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>ODModelBuilderTF.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   
   <ItemGroup>
     <None Remove="$(TargetDir)env.zip" />
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -60,13 +69,6 @@
 
   <ItemGroup>
     <PackageReference Include="pythonnet_netstandard_py37_win" Version="2.5.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="licence.txt">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
