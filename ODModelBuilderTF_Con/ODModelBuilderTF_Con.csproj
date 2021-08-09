@@ -5,7 +5,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
     <Platforms>AnyCPU</Platforms>
-    <Version>1.1.0-rc1</Version>
+    <Version>1.1.0</Version>
     <Authors>Luigi Generale</Authors>
     <Product>ODModelBuilderTF Console application</Product>
     <Description>Console application to test the ODModelBuilderTF library.</Description>

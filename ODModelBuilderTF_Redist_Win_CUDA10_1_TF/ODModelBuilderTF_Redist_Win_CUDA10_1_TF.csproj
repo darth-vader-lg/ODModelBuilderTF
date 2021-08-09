@@ -20,7 +20,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Version>2.4.1-rc1</Version>
+    <Version>2.4.1</Version>
     <Authors>Luigi Generale</Authors>
     <Product>ODModelBuilderTF TensorFlow 2.4.1 / Cuda10.1 redistributables</Product>
     <SignAssembly>true</SignAssembly>
