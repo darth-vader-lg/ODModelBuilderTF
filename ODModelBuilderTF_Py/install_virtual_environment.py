@@ -32,7 +32,7 @@ def check_requirements(requirements='requirements.txt', exclude=(), no_deps=True
             missing.append(r)
     return missing
 
-def install_virtual_environment(env_name: str=env_name, requirements='requirements.txt', no_cache=True, no_custom_tf=False, custom_tf_dir=None):
+def install_virtual_environment(env_name: str=env_name, requirements='requirements.txt', no_cache=True, no_custom_tf=False, custom_tf_dir=None, custom_tf_dest=None):
     """
     Install the virtual environment.
     Keyword arguments:
@@ -40,6 +40,7 @@ def install_virtual_environment(env_name: str=env_name, requirements='requiremen
     no_cache        -- disable caching of the packages
     no_custom_tf    -- disable installation of the custom TensorFlow also if it's needed
     custom_tf_dir   -- directory containing special tensorflow builds
+    custom_tf_dest  -- if specified bypass other installations and install the custom tensorflow
     -
     returns the number of installed packages
     """
@@ -54,7 +55,7 @@ def install_virtual_environment(env_name: str=env_name, requirements='requiremen
     force_install_requirements = False
     from utilities import is_colab
     if (not is_colab()):
-        if (not os.path.isdir(env_name)):
+        if (not os.path.isdir(env_name) and not custom_tf_dest):
             print('Creating the Python virtual environment')
             try:
                 from utilities import execute_script
@@ -94,7 +95,7 @@ def install_virtual_environment(env_name: str=env_name, requirements='requiremen
         installed_packages = installed_packages + 1
         base_packages_installed = True
     # Check of missing packages
-    missing = check_requirements(requirements=requirements, no_deps=True) if (os.path.isfile(requirements)) else []
+    missing = check_requirements(requirements=requirements, no_deps=True) if (os.path.isfile(requirements) and not custom_tf_dest) else []
     # Installation of the requirements
     if (force_install_requirements or len(missing) > 0):
         if (len(missing) > 0):
@@ -127,12 +128,17 @@ def install_virtual_environment(env_name: str=env_name, requirements='requiremen
     # Install the custom tensorflow if needed
     if (not no_custom_tf):
         from od_install import install_custom_tensorflow
-        installed_packages = installed_packages + install_custom_tensorflow(requirements=requirements, no_cache=no_cache, custom_tf_dir=custom_tf_dir)
+        installed_packages = installed_packages + install_custom_tensorflow(requirements=requirements, no_cache=no_cache, custom_tf_dir=custom_tf_dir, destination_dir=custom_tf_dest)
     return installed_packages
 
 if __name__ == '__main__':
+    def _install_custom_tf(args):
+        sys.exit(install_virtual_environment(env_name, requirements=args.requirements, no_cache=args.no_cache, no_custom_tf=args.no_custom_tf, custom_tf_dir=args.custom_tf_dir, custom_tf_dest=args.destination_dir))
+
+    def _install_virtual_environment(args):
+        sys.exit(install_virtual_environment(env_name, requirements=args.requirements, no_cache=args.no_cache, no_custom_tf=args.no_custom_tf, custom_tf_dir=args.custom_tf_dir))
+    import argparse
     import  os
-    import  argparse
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--custom-tf-dir',
@@ -157,5 +163,19 @@ if __name__ == '__main__':
         default=os.path.join(os.path.dirname(__file__), 'requirements.txt'),
         help='Requirements file'
     )
-    args = parser.parse_args()
-    sys.exit(install_virtual_environment(env_name, requirements=args.requirements, no_cache=args.no_cache, no_custom_tf=args.no_custom_tf, custom_tf_dir=args.custom_tf_dir))
+    parser_cmds = argparse.ArgumentParser()
+    subparsers = parser_cmds.add_subparsers(dest='cmd')
+    parser_cmd_custom_tf = subparsers.add_parser("custom-tf", help="Custom tensorflow installation")
+    parser_cmd_custom_tf.add_argument(
+        '--dest-dir',
+        required=True,
+        dest='destination_dir',
+        help='Destination directory of the costom tensorflow packages'
+    )
+    parser_cmd_custom_tf.set_defaults(func=_install_custom_tf)
+    args, extras = parser.parse_known_args()
+    if len(extras)>0 and extras[0] in ['custom-tf']:
+        args = parser_cmds.parse_args(extras, namespace=args)
+        args.func(args)
+    else:
+        _install_virtual_environment(args)

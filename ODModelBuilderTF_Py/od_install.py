@@ -202,29 +202,37 @@ def install_object_detection(requirements:str=None, no_cache=True):
         raise Exception('Object detection installation error.')
     print('Object detection environment installed successfully.')
 
-def install_custom_tensorflow(requirements:str=None, no_cache=True, custom_tf_dir=None):
+def install_custom_tensorflow(requirements:str=None, no_cache=True, custom_tf_dir=None, destination_dir=None):
     """
     Install the custom tensorflow with cuda 10 support if needed.
     requirements    -- the requirements file
     no_cache        -- disable caching of the packages
     custom_tf_dir   -- directory containing special tensorflow builds
+    destination_dir -- if specified bypass any tests and forces installation in it
     -
     returns the number of installed packages
     """
     # Check if the custom TensorFlow is already installed or not needed
-    marker_file = os.path.join(os.path.split(sys.executable)[0], 'tensorflow_cuda10.txt')
-    if (os.path.exists(marker_file) or not Cfg.tensorflow_cuda10):
+    import pkg_resources
+    marker_file = None
+    try:
+        dists = pkg_resources.AvailableDistributions()
+        tensorflow_location = dists['tensorflow'][0].location
+        marker_file = os.path.join(tensorflow_location, 'custom-tensorflow.info')
+    except: pass
+    if ((not marker_file or os.path.exists(marker_file) and not destination_dir) or not Cfg.tensorflow_cuda10):
         return 0
     # Read CUDA version
-    is_cuda_10 = False
-    try:
-        import subprocess
-        output = subprocess.check_output(['nvcc', '--version'], shell=True).decode()
-        is_cuda_10 = 'V10.1' in output
-    except: pass
-    # Check if Cuda is enabled
-    if (not is_cuda_10):
-        return 0
+    if (not destination_dir):
+        is_cuda_10 = False
+        try:
+            import subprocess
+            output = subprocess.check_output(['nvcc', '--version'], shell=True).decode()
+            is_cuda_10 = 'V10.1' in output
+        except: pass
+        # Check if Cuda is enabled
+        if (not is_cuda_10):
+            return 0
     # Check if a local package is present in the custom package directory
     tensorflow_package = Cfg.tensorflow_cuda10
     if (custom_tf_dir and os.path.exists(custom_tf_dir)):
@@ -236,6 +244,8 @@ def install_custom_tensorflow(requirements:str=None, no_cache=True, custom_tf_di
             tensorflow_package = str(found[0])
     # Install the custom TensorFlow
     install_extra_args = ['--force', '--no-deps']
+    if (destination_dir):
+        install_extra_args.extend(['--target', destination_dir])
     if (no_cache):
         install_extra_args.append('--no-cache')
     if (requirements):
@@ -252,6 +262,14 @@ def install_custom_tensorflow(requirements:str=None, no_cache=True, custom_tf_di
         pkg_resources.require('dataclasses')
         uninstall('dataclasses')
     except Exception as e: pass
+    if (not destination_dir):
+        try:
+            dists = pkg_resources.AvailableDistributions()
+            tensorflow_location = dists['tensorflow'][0].location
+            marker_file = os.path.join(tensorflow_location, 'custom-tensorflow.info')
+        except: pass
+    else:
+        marker_file = os.path.join(destination_dir, 'custom-tensorflow.info')
     with open(marker_file, "w") as f:
         f.write(Cfg.tensorflow_cuda10)
     return 1

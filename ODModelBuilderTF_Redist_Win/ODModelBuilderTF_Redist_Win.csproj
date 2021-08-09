@@ -1,0 +1,96 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
+    <AssemblyName>ODModelBuilderTF_Redist_Win</AssemblyName>
+    <RootNamespace>ODModelBuilderTF_Redist_Win</RootNamespace>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Windows redistributables for the ODModelBuilderTF library with object detection 2.4.0</Description>
+    <Copyright>Copyright 2021 Luigi Generale</Copyright>
+    <PackageLicenseExpression />
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/darth-vader-lg/ODModelBuilderTF</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/darth-vader-lg/ODModelBuilderTF.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <NeutralLanguage />
+    <PackageId>ODModelBuilderTF-Redist-Win</PackageId>
+    <Platforms>AnyCPU</Platforms>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Version>2.4.0-rc1</Version>
+    <Authors>Luigi Generale</Authors>
+    <Product>ODModelBuilderTF redistributables</Product>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>ODModelBuilderTF.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PythonProject>$(ProjectDir)..\ODModelBuilderTF_Py\</PythonProject>
+    <PythonProjectEnv>$(PythonProject)env\</PythonProjectEnv>
+    <PythonProjectOut>$(PythonProjectEnv)env.info</PythonProjectOut>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="$(TargetDir)env.zip" />
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="$(TargetDir)env.zip" Condition="$(ConfigurationName) != 'Debug'" />
+  </ItemGroup>
+
+  <Target Name="CleanPyEnvironment" AfterTargets="Clean">
+    <Delete Condition="Exists('$(TargetDir)env.zip')" Files="$(TargetDir)env.zip" />
+  </Target>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+  </Target>
+  
+  <UsingTask TaskName="ZipPyEnvironment" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
+    <ParameterGroup />
+    <Task>
+      <Reference Include="System.IO.Compression" />
+      <Reference Include="System.IO.Compression.FileSystem" />
+      <Reference Include="System.IO.Compression.ZipFile" />
+      <Using Namespace="System.IO.Compression"/>
+      <Code Type="Fragment" Language="cs">
+        Log.LogMessage(MessageImportance.High, "Create the zip with the object detection environment");
+        if (File.Exists(@"$(TargetDir)env.zip"))
+          File.Delete(@"$(TargetDir)env.zip");
+        using (var archive = ZipFile.Open(@"$(TargetDir)env.zip", ZipArchiveMode.Create)) {
+          var fullPathLen = @"$(PythonProject)env".Length + 1;
+          foreach (var path in Directory.GetFiles(@"$(PythonProject)env", "*.*", SearchOption.AllDirectories)) {
+            if (Directory.Exists(path))
+              continue;
+            var relPath = path.Substring(fullPathLen);
+            if (relPath.ToLower().Contains(@"site-packages\tensorflow") || relPath.ToLower().Contains(@"custom-tf"))
+              continue;
+            Log.LogMessage(MessageImportance.Low, "Adding " + path);
+            archive.CreateEntryFromFile(path, relPath);
+          }
+        }
+      </Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="ZipPyEnvironment" AfterTargets="PreBuild" Condition="$(ConfigurationName) != 'Debug'">
+    <PropertyGroup>
+      <ZipFile>$(TargetDir)env.zip</ZipFile>
+      <BuildTimestamp>0</BuildTimestamp>
+      <ZipTimestamp>0</ZipTimestamp>
+      <BuildTimestamp Condition="Exists('$(PythonProjectOut)')">$([System.IO.File]::GetLastWriteTime('$(PythonProjectOut)').Ticks)</BuildTimestamp>
+      <ZipTimestamp Condition="Exists('$(ZipFile)')">$([System.IO.File]::GetLastWriteTime('$(ZipFile)').Ticks)</ZipTimestamp>
+    </PropertyGroup>
+    <ZipPyEnvironment Condition="$(BuildTimestamp) &gt; $(ZipTimestamp)" />
+  </Target>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+  </Target>
+
+</Project>

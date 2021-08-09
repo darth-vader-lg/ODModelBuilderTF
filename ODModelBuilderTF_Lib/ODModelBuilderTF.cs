@@ -1,5 +1,6 @@
 ﻿using Python.Runtime;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -89,10 +90,45 @@ namespace ODModelBuilderTF
          // Name of the downloaded Python zip file and the get pip script
          var pythonZip = Path.Combine(virtualEnvPath, "python.zip");
          var getPipScript = Path.Combine(virtualEnvPath, "get-pip.py");
-         // Check if the Assembly contains the environment
-         var zipEnv = GetPythonResource("env.zip");
-         if (zipEnv != null) {
-            var archive = new ZipArchive(zipEnv);
+         // Check if the the redist containing the object detection environment is present
+         var zipEnv = null as Stream;
+         var zipTF = null as Stream;
+         try {
+            var assembly = Assembly.Load("ODModelBuilderTF_Redist_Win");
+            var resourceName = assembly.GetManifestResourceNames().FirstOrDefault(r => r.EndsWith($".env.zip"));
+            zipEnv = resourceName == null ? null : assembly.GetManifestResourceStream(resourceName);
+         }
+         catch { }
+         // Check if the system has just CUDA10.1 and the redist containing the customized TensorFlow is present
+         try {
+            var nvccProcess = Process.Start(new ProcessStartInfo
+            {
+               FileName = "nvcc.exe",
+               Arguments = "--version",
+               UseShellExecute = false,
+               RedirectStandardOutput = true,
+               CreateNoWindow = true
+            });
+            var output = nvccProcess.StandardOutput.ReadToEnd();
+            nvccProcess.WaitForExit();
+            if (output.Contains("V10.1")) {
+               var assembly = Assembly.Load("ODModelBuilderTF_Redist_Win_CUDA10_1_TF");
+               var resourceName = assembly.GetManifestResourceNames().FirstOrDefault(r => r.EndsWith($".env.zip"));
+               zipTF = resourceName == null ? null : assembly.GetManifestResourceStream(resourceName);
+            }
+         }
+         catch { }
+         // Check if the system doesn't still have the TensorFlow installed and a redist containing the TensorFlow is present
+         try {
+            if (zipTF == null) {
+               var assembly = Assembly.Load("ODModelBuilderTF_Redist_Win_TF");
+               var resourceName = assembly.GetManifestResourceNames().FirstOrDefault(r => r.EndsWith($".env.zip"));
+               zipTF = resourceName == null ? null : assembly.GetManifestResourceStream(resourceName);
+            }
+         }
+         catch { }
+         if (zipEnv != null && zipTF != null) {
+            using var archive = new ZipArchive(zipEnv);
             var extract = !Directory.Exists(virtualEnvPath);
             if (!extract) {
                var buildTimeFile = Path.Combine(virtualEnvPath, "env.info");
@@ -103,12 +139,10 @@ namespace ODModelBuilderTF
                }
             }
             if (extract) {
-               var cuda10MarkerFile = Path.Combine(virtualEnvPath, "tensorflow_cuda10.txt");
-               if (File.Exists(cuda10MarkerFile)) {
-                  try { File.Delete(cuda10MarkerFile); } catch { }
-               }
                TraceOutput("Preparing the environment");
                archive.ExtractToDirectory(virtualEnvPath, true);
+               using var tfArchive = new ZipArchive(zipTF);
+               tfArchive.ExtractToDirectory(virtualEnvPath, true);
             }
          }
          else {
@@ -202,7 +236,7 @@ namespace ODModelBuilderTF
                using var requirementFile = File.Create(tempRequirements);
                requirementsContent.CopyTo(requirementFile);
                requirementFile.Close();
-               if (zipEnv == null) {
+               if (zipEnv == null || zipTF == null) {
                   var pycocotoolsFileName = pycocotoolsRes[pycocotoolsRes.IndexOf("pycocotools")..];
                   using var pycocotoolsFile = File.Create(Path.Combine(virtualEnvPath, pycocotoolsFileName));
                   using var pycocotoolsContent = Assembly.GetExecutingAssembly().GetManifestResourceStream(pycocotoolsRes);

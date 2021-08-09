@@ -20,16 +20,19 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <PythonProject>$(ProjectDir)..\ODModelBuilderTF_Py\</PythonProject>
-    <PythonProjectEnv>$(PythonProject)env\</PythonProjectEnv>
-    <PythonProjectOut>$(PythonProjectEnv)env.info</PythonProjectOut>
     <Version>1.1.0-rc1</Version>
     <Authors>Luigi Generale</Authors>
     <Product>ODModelBuilderTF Library</Product>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>ODModelBuilderTF.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
-  
+
+  <PropertyGroup>
+    <PythonProject>$(ProjectDir)..\ODModelBuilderTF_Py\</PythonProject>
+    <PythonProjectEnv>$(PythonProject)env\</PythonProjectEnv>
+    <PythonProjectOut>$(PythonProjectEnv)env.info</PythonProjectOut>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Remove="$(TargetDir)env.zip" />
     <None Include="..\LICENSE">
@@ -65,69 +68,19 @@
     <EmbeddedResource Include="$(PythonProject)train_tensorboard.py" Link="py\train_tensorboard.py" />
     <EmbeddedResource Include="$(PythonProject)utilities.py" Link="py\utilities.py" />
     <EmbeddedResource Include="$(PythonProject)Packages\pycocotools-2.0.2-cp37-cp37m-win_amd64.whl" Link="py\Packages\pycocotools-2.0.2-cp37-cp37m-win_amd64.whl" />
-    <EmbeddedResource Include="$(TargetDir)env.zip" Condition="$(ConfigurationName) != 'Debug'" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="pythonnet_netstandard_py37_win" Version="2.5.2" />
   </ItemGroup>
 
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-  </Target>
-
-  <Target Name="ZipPyEnvironment" AfterTargets="PreBuild" Condition="$(ConfigurationName) != 'Debug'">
-    <PropertyGroup>
-      <ZipFile>$(TargetDir)env.zip</ZipFile>
-      <BuildTimestamp>0</BuildTimestamp>
-      <ZipTimestamp>0</ZipTimestamp>
-      <BuildTimestamp Condition="Exists('$(PythonProjectOut)')">$([System.IO.File]::GetLastWriteTime('$(PythonProjectOut)').Ticks)</BuildTimestamp>
-      <ZipTimestamp Condition="Exists('$(ZipFile)')">$([System.IO.File]::GetLastWriteTime('$(ZipFile)').Ticks)</ZipTimestamp>
-    </PropertyGroup>
-    <ZipDirectory Condition="$(BuildTimestamp) &gt; $(ZipTimestamp)" SourceDirectory="$(PythonProjectEnv)" DestinationFile="$(ZipFile)" Overwrite="true" />
-  </Target>
-  
-  <Target Name="CleanPyEnvironment" AfterTargets="Clean">
-    <Exec Condition="Exists('$(TargetDir)py')" Command="PowerShell -NoProfile -ExecutionPolicy Bypass -Command &quot;rd -Recurse '$(TargetDir)py'&quot;" />
-    <Delete Condition="Exists('$(TargetDir)env.zip')" Files="$(TargetDir)env.zip" />
-  </Target>
-  
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-  </Target>
-  
-  <!-- Uncomment to add extra files in the output folder -->
-  <!--
-  <PropertyGroup>
-    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CustomBuildOutput</TargetsForTfmSpecificBuildOutput>
-  </PropertyGroup>
-  <Target Name="CustomBuildOutput">
-    <PropertyGroup>
-      <SourceFolder>extras</SourceFolder>
-    </PropertyGroup>
-    <ItemGroup>
-      <BuildOutputInPackage Include="$(SourceFolder)\**"/>
-    </ItemGroup>
-    <Message Text="$(SourceFolder) -> $(TargetDir)" Importance="high" />
-  </Target>
-  -->
-
-  <!-- Uncomment to add extra files in the output folder -->
-  <!--
-  <PropertyGroup>
-    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);CustomContentInPackage</TargetsForTfmSpecificContentInPackage>
-  </PropertyGroup>
-  <Target Name="CustomContentInPackage">
-    <PropertyGroup>
-      <NoDefaultExcludes>true</NoDefaultExcludes>
-      <SourceFolder>extras</SourceFolder>
-      <DestPackageFolder>extras</DestPackageFolder>
-    </PropertyGroup>
-    <ItemGroup>
-      <TfmSpecificPackageFile Include="$(SourceFolder)\**">
-      <PackagePath>$(DestPackageFolder)</PackagePath>
-      </TfmSpecificPackageFile>
-    </ItemGroup>
-    <Message Text="$(SourceFolder) -> $(DestPackageFolder)" Importance="high" />
-  </Target>
-  -->
+  <ItemGroup>
+    <ProjectReference Include="..\ODModelBuilderTF_Redist_Win\ODModelBuilderTF_Redist_Win.csproj">
+      <PrivateAssets>All</PrivateAssets>
+    </ProjectReference>
+    <ProjectReference Include="..\ODModelBuilderTF_Redist_Win_TF\ODModelBuilderTF_Redist_Win_TF.csproj">
+      <PrivateAssets>All</PrivateAssets>
+    </ProjectReference>
+  </ItemGroup>
 
 </Project>
