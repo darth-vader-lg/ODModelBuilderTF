@@ -20,7 +20,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Authors>Luigi Generale</Authors>
     <Product>ODModelBuilderTF Library</Product>
     <SignAssembly>true</SignAssembly>
