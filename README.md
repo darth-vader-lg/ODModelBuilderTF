@@ -4,22 +4,17 @@ Object detection models builder with TensorFlow.
 
 # .NET (C#) object detection models builder with TensorFlow.
 
-ODModelBuilderTF is a .NET library which allow to train object detection models directly in .NET environment, without the needing of Python code.
-
-It's based on the TensorFlow framework.
-
-It can be used with all .NET languages simply including the package on your project.
-
-It's also event oriented, so it's possible to control the whole train process registering the events in the client application.
-
-Tuning parameters are provided to manage the train process directly from the client without manually writing configuration files.
-
-Can train and export TensorFlow's saved model format, frozen graph and ONNX models that can be afterwards consumed, for example, in the [ML.NET](https://dotnet.microsoft.com/apps/machinelearning-ai/ml-dotnet) framework.
+ODModelBuilderTF is a .NET library which allow to train object detection models directly in .NET environment, without the needing of Python code.<BR>
+* It's based on the TensorFlow framework.<BR>
+* It can be used with all .NET languages simply including the package on your project.<BR>
+* It's also event oriented, so it's possible to control the whole train process registering the events in the client application.<BR>
+* Tuning parameters are provided to manage the train process directly from the client without manually writing configuration files.<BR>
+* Can train and export TensorFlow's saved model format, frozen graph and ONNX models that can be afterwards consumed, for example, in the [ML.NET](https://dotnet.microsoft.com/apps/machinelearning-ai/ml-dotnet) framework.
 
 ## Getting started with ODModelBuilderTF
 
-Simply include the package (or the reference to the project if you include it in your solution) to used the library.
-At the first initialization it will install the train environment on your device downloading it from Internet (the process can take long time).
+Simply include the package (or the reference to the project if you include it in your solution) to used the library.<BR>
+At the first initialization it will install the train environment on your device downloading it from Internet (the process can take long time).<BR>
 If you prefer to have a ready to use environment (or your device is offline) you can include in your application the redistributables containing all the needed resources.
 
 ## Sample apps
@@ -27,13 +22,13 @@ If you prefer to have a ready to use environment (or your device is offline) you
 For a quick usage example you can take a look to the console application included in this repository, used to test the library.
 
 ## Packages
-[ODModelBuilderTF](https://www.nuget.org/packages/ODModelBuilderTF): the train library.
-[ODModelBuilderTF-Redist-Win](https://www.nuget.org/packages/ODModelBuilderTF-Redist-Win): the redistributable with TensorFlow object detection packages.
+[ODModelBuilderTF](https://www.nuget.org/packages/ODModelBuilderTF): the train library.<BR>
+[ODModelBuilderTF-Redist-Win](https://www.nuget.org/packages/ODModelBuilderTF-Redist-Win): the redistributable with TensorFlow object detection packages.<BR>
 [ODModelBuilderTF-Redist-Win-TF](https://www.nuget.org/packages/ODModelBuilderTF-Redist-Win-TF): the redistributable with TensorFlow packages.
->[ODModelBuilderTF-Redist-Win-TF-A](https://www.nuget.org/packages/ODModelBuilderTF-Redist-Win-TF-A): the redistributable with TensorFlow library (part A).
->[ODModelBuilderTF-Redist-Win-TF-B](https://www.nuget.org/packages/ODModelBuilderTF-Redist-Win-TF-B): the redistributable with TensorFlow library (part B).
+* [ODModelBuilderTF-Redist-Win-TF-A](https://www.nuget.org/packages/ODModelBuilderTF-Redist-Win-TF-A): the redistributable with TensorFlow library (part A).<BR>
+* [ODModelBuilderTF-Redist-Win-TF-B](https://www.nuget.org/packages/ODModelBuilderTF-Redist-Win-TF-B): the redistributable with TensorFlow library (part B).<BR>
 
-[ ODModelBuilderTF-Redist-Win-CUDA10-1-TF](https://www.nuget.org/packages/ODModelBuilderTF-Redist-Win-CUDA10-1-TF): the redistributable with a special TensorFlow library for old GPUs which can work with CUDA 10.1 SM30. To use instead of the ODModelBuilderTF-Redist-Win-TF (CUDA 11) in old devices.
+[ ODModelBuilderTF-Redist-Win-CUDA10-1-TF](https://www.nuget.org/packages/ODModelBuilderTF-Redist-Win-CUDA10-1-TF): the redistributable with a special TensorFlow library for old GPUs which can work with CUDA 10.1 SM30. To use instead of the ODModelBuilderTF-Redist-Win-TF (CUDA 11) in old devices.<BR>
 
 ### Simple installation with environment download at the first run:
 [ODModelBuilderTF](https://www.nuget.org/packages/ODModelBuilderTF)
