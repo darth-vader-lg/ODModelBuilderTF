@@ -19,13 +19,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ODModelBuilderTF_Lib\ODModelBuilderTF_Lib.csproj" />
-    <ProjectReference Include="..\ODModelBuilderTF_Redist_Win\ODModelBuilderTF_Redist_Win.csproj" />
-    <ProjectReference Include="..\ODModelBuilderTF_Redist_Win_CUDA10_1_TF\ODModelBuilderTF_Redist_Win_CUDA10_1_TF.csproj" />
-    <ProjectReference Include="..\ODModelBuilderTF_Redist_Win_TF\ODModelBuilderTF_Redist_Win_TF.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Include="..\LICENSE">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
@@ -34,6 +27,15 @@
 
   <ItemGroup>
     <Folder Include="Data\Images\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ODModelBuilderTF_Lib\ODModelBuilderTF_Lib.csproj" />
+    <ProjectReference Include="..\ODModelBuilderTF_Redist_Win\ODModelBuilderTF_Redist_Win.csproj" />
+    <ProjectReference Include="..\ODModelBuilderTF_Redist_Win_CUDA10_1_TF\ODModelBuilderTF_Redist_Win_CUDA10_1_TF.csproj" />
+    <ProjectReference Include="..\ODModelBuilderTF_Redist_Win_TF\ODModelBuilderTF_Redist_Win_TF.csproj" />
+    <ProjectReference Include="..\ODModelBuilderTF_Redist_Win_TF_A\ODModelBuilderTF_Redist_Win_TF_A.csproj" />
+    <ProjectReference Include="..\ODModelBuilderTF_Redist_Win_TF_B\ODModelBuilderTF_Redist_Win_TF_B.csproj" />
   </ItemGroup>
 
   <ItemGroup>

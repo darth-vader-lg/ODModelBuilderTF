@@ -3,10 +3,10 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
-    <AssemblyName>ODModelBuilderTF_Redist_Win_TF</AssemblyName>
-    <RootNamespace>ODModelBuilderTF_Redist_Win_TF</RootNamespace>
+    <AssemblyName>ODModelBuilderTF_Redist_Win_TF_A</AssemblyName>
+    <RootNamespace>ODModelBuilderTF_Redist_Win_TF_A</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Description>Windows redistributables for the ODModelBuilderTF library with TensorFlow 2.4.1</Description>
+    <Description>Windows redistributables for the ODModelBuilderTF library with TensorFlow 2.4.1 (first lib part)</Description>
     <Copyright>Copyright 2021 Luigi Generale</Copyright>
     <PackageLicenseExpression />
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
@@ -14,7 +14,7 @@
     <RepositoryUrl>https://github.com/darth-vader-lg/ODModelBuilderTF.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <NeutralLanguage />
-    <PackageId>ODModelBuilderTF-Redist-Win-TF</PackageId>
+    <PackageId>ODModelBuilderTF-Redist-Win-TF-A</PackageId>
     <Platforms>AnyCPU</Platforms>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
   </PropertyGroup>
@@ -22,7 +22,7 @@
   <PropertyGroup>
     <Version>2.4.1</Version>
     <Authors>Luigi Generale</Authors>
-    <Product>ODModelBuilderTF TensorFlow 2.4.1 redistributables</Product>
+    <Product>ODModelBuilderTF TensorFlow 2.4.1 redistributables (lib first part)</Product>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>ODModelBuilderTF.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
@@ -45,18 +45,13 @@
     <EmbeddedResource Include="$(TargetDir)env.zip" Condition="$(ConfigurationName) != 'Debug'" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\ODModelBuilderTF_Redist_Win_TF_A\ODModelBuilderTF_Redist_Win_TF_A.csproj" />
-    <ProjectReference Include="..\ODModelBuilderTF_Redist_Win_TF_B\ODModelBuilderTF_Redist_Win_TF_B.csproj" />
-  </ItemGroup>
-
   <Target Name="CleanPyEnvironment" AfterTargets="Clean">
     <Delete Condition="Exists('$(TargetDir)env.zip')" Files="$(TargetDir)env.zip" />
   </Target>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
   </Target>
-  
+
   <UsingTask TaskName="ZipPyEnvironment" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
     <ParameterGroup />
     <Task>
@@ -65,19 +60,22 @@
       <Reference Include="System.IO.Compression.ZipFile" />
       <Using Namespace="System.IO.Compression" />
       <Code Type="Fragment" Language="cs">
-        Log.LogMessage(MessageImportance.High, "Create the zip with the TensorFlow package");
+        Log.LogMessage(MessageImportance.High, "Create the zip with the first part of the TensorFlow library");
         if (File.Exists(@"$(TargetDir)env.zip"))
           File.Delete(@"$(TargetDir)env.zip");
         using (var archive = ZipFile.Open(@"$(TargetDir)env.zip", ZipArchiveMode.Create)) {
-          var fullPathLen = @"$(PythonProject)env".Length + 1;
-          foreach (var path in Directory.GetFiles(@"$(PythonProject)env", "*.*", SearchOption.AllDirectories)) {
-            if (path.Contains("__pycache__") || path.Contains("_pywrap_tensorflow_internal.pyd") || Directory.Exists(path))
-              continue;
-            var relPath = path.Substring(fullPathLen);
-            if (!relPath.ToLower().Contains(@"site-packages\tensorflow") || relPath.ToLower().Contains(@"custom-tf"))
-              continue;
-            Log.LogMessage(MessageImportance.Low, "Adding " + path);
-            archive.CreateEntryFromFile(path, relPath, CompressionLevel.Optimal);
+          var path = @"$(PythonProject)env\Lib\site-packages\tensorflow\python\_pywrap_tensorflow_internal.pyd";
+          Log.LogMessage(MessageImportance.Low, "Adding " + path);
+          using (var read = File.OpenRead(path)) {
+            var entry = archive.CreateEntry(@"Lib\site-packages\tensorflow\python\_pywrap_tensorflow_internal.pyd", CompressionLevel.Optimal);
+            using (var stream = entry.Open()) {
+              var size = read.Length / 2;
+              var buf = new byte[81920];
+              while (read.Position &lt; size) {
+                var nBytes = read.Read(buf, 0, (int)Math.Min(buf.Length, size - read.Position));
+                stream.Write(buf, 0, nBytes);
+              }
+            }
           }
         }
       </Code>

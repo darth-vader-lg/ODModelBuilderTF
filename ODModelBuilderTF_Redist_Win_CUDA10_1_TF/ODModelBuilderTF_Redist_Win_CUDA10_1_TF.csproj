@@ -52,14 +52,14 @@
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
   </Target>
 
-  <UsingTask TaskName="ZipPyEnvironment" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll" >
+  <UsingTask TaskName="ZipPyEnvironment" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
     <ParameterGroup />
     <Task>
       <Reference Include="System.IO.Compression" />
       <Reference Include="System.IO.Compression.FileSystem" />
       <Reference Include="System.IO.Compression.ZipFile" />
-      <Using Namespace="System.IO"/>
-      <Using Namespace="System.IO.Compression"/>
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.IO.Compression" />
       <Code Type="Fragment" Language="cs">
         Log.LogMessage(MessageImportance.High, "Create the zip with the TensorFlow package");
         if (File.Exists(@"$(TargetDir)env.zip"))
@@ -67,7 +67,7 @@
         using (var archive = ZipFile.Open(@"$(TargetDir)env.zip", ZipArchiveMode.Create)) {
           var fullPathLen = @"$(PythonProject)env".Length + 1;
           foreach (var path in Directory.GetFiles(@"$(PythonProject)env", "*.*", SearchOption.AllDirectories)) {
-            if (Directory.Exists(path))
+            if (path.Contains("__pycache__") || Directory.Exists(path))
               continue;
             var relPath = path.Substring(fullPathLen);
             if (!relPath.ToLower().Contains(@"site-packages\tensorflow") || relPath.ToLower().Contains(@"custom-tf"))
@@ -98,12 +98,7 @@
       <BuildTimestamp Condition="Exists('$(PythonProjectOut)')">$([System.IO.File]::GetLastWriteTime('$(PythonProjectOut)').Ticks)</BuildTimestamp>
       <ZipTimestamp Condition="Exists('$(ZipFile)')">$([System.IO.File]::GetLastWriteTime('$(ZipFile)').Ticks)</ZipTimestamp>
     </PropertyGroup>
-    <Exec
-      Condition="$(BuildTimestamp) &gt; $(ZipTimestamp)"
-      Command="
-      cd $(PythonProject)
-      install_virtual_environment.cmd -custom-tf-dst 'env\custom-tf\site-packages'"
-      />
+    <Exec Condition="$(BuildTimestamp) &gt; $(ZipTimestamp)" Command="&#xD;&#xA; cd $(PythonProject)&#xD;&#xA; install_virtual_environment.cmd -custom-tf-dst 'env\custom-tf\site-packages'" />
     <ZipPyEnvironment Condition="$(BuildTimestamp) &gt; $(ZipTimestamp)" />
   </Target>
 

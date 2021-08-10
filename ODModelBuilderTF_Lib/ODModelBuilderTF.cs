@@ -1,5 +1,6 @@
 ﻿using Python.Runtime;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -93,6 +94,7 @@ namespace ODModelBuilderTF
          // Check if the the redist containing the object detection environment is present
          var zipEnv = null as Stream;
          var zipTF = null as Stream;
+         var zipTFParts = new List<Stream>();
          try {
             var assembly = Assembly.Load("ODModelBuilderTF_Redist_Win");
             var resourceName = assembly.GetManifestResourceNames().FirstOrDefault(r => r.EndsWith($".env.zip"));
@@ -124,6 +126,20 @@ namespace ODModelBuilderTF
                var assembly = Assembly.Load("ODModelBuilderTF_Redist_Win_TF");
                var resourceName = assembly.GetManifestResourceNames().FirstOrDefault(r => r.EndsWith($".env.zip"));
                zipTF = resourceName == null ? null : assembly.GetManifestResourceStream(resourceName);
+               if (zipTF != null) {
+                  try {
+                     for (var c = 'A'; c <= 'Z'; c++) {
+                        var part = Assembly.Load($"ODModelBuilderTF_Redist_Win_TF_{new string(c, 1)}");
+                        var partName = part.GetManifestResourceNames().FirstOrDefault(r => r.EndsWith($".env.zip"));
+                        var partStream = partName == null ? null : part.GetManifestResourceStream(partName);
+                        if (partStream != null)
+                           zipTFParts.Add(partStream);
+                        else
+                           break;
+                     }
+                  }
+                  catch { }
+               }
             }
          }
          catch { }
@@ -143,6 +159,23 @@ namespace ODModelBuilderTF
                archive.ExtractToDirectory(virtualEnvPath, true);
                using var tfArchive = new ZipArchive(zipTF);
                tfArchive.ExtractToDirectory(virtualEnvPath, true);
+               if (zipTFParts.Count > 0) {
+                  var writtenFiles = new HashSet<string>();
+                  foreach (var part in zipTFParts) {
+                     using var zip = new ZipArchive(part, ZipArchiveMode.Read);
+                     foreach (var entry in zip.Entries) {
+                        var fullNameLC = entry.FullName.ToLower();
+                        var destPath = Path.Combine(virtualEnvPath, entry.FullName);
+                        if (!writtenFiles.Contains(fullNameLC)) {
+                           writtenFiles.Add(fullNameLC);
+                           if (File.Exists(destPath))
+                              File.Delete(destPath);
+                        }
+                        using var stream = File.Open(destPath, FileMode.Append, FileAccess.Write);
+                        entry.Open().CopyTo(stream);
+                     }
+                  }
+               }
             }
          }
          else {
