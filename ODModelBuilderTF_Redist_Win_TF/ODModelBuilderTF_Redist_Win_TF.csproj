@@ -71,10 +71,17 @@
         using (var archive = ZipFile.Open(@"$(TargetDir)env.zip", ZipArchiveMode.Create)) {
           var fullPathLen = @"$(PythonProject)env".Length + 1;
           foreach (var path in Directory.GetFiles(@"$(PythonProject)env", "*.*", SearchOption.AllDirectories)) {
-            if (path.Contains("__pycache__") || path.Contains("_pywrap_tensorflow_internal.pyd") || Directory.Exists(path))
+            if (Directory.Exists(path))
               continue;
             var relPath = path.Substring(fullPathLen);
-            if (!relPath.ToLower().Contains(@"site-packages\tensorflow") || relPath.ToLower().Contains(@"custom-tf"))
+            var relPathToLower = relPath.ToLower();
+            if (relPathToLower.Contains(@"__pycache__"))
+              continue;
+            if (!relPathToLower.Contains(@"site-packages\tensorflow"))
+              continue;
+            if (relPathToLower.StartsWith(@"custom-tf"))
+              continue;
+            if (relPathToLower.Contains(@"_pywrap_tensorflow_internal.pyd"))
               continue;
             Log.LogMessage(MessageImportance.Low, "Adding " + path);
             archive.CreateEntryFromFile(path, relPath, CompressionLevel.Optimal);

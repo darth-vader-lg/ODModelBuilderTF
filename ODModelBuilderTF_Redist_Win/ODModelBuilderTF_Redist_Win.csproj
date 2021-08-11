@@ -69,7 +69,14 @@
             if (path.Contains("__pycache__") || Directory.Exists(path))
               continue;
             var relPath = path.Substring(fullPathLen);
-            if (relPath.ToLower().Contains(@"site-packages\tensorflow") || relPath.ToLower().Contains(@"custom-tf"))
+            var relPathToLower = relPath.ToLower();
+            if (relPathToLower.Contains(@"__pycache__"))
+              continue;
+            if (relPathToLower.StartsWith(@"scripts"))
+              continue;
+            if (relPathToLower.Contains(@"site-packages\tensorflow"))
+              continue;
+            if (relPathToLower.Contains(@"custom-tf"))
               continue;
             Log.LogMessage(MessageImportance.Low, "Adding " + path);
             archive.CreateEntryFromFile(path, relPath);
