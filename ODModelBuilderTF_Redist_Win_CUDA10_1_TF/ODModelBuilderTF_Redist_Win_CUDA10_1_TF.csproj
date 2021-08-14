@@ -6,7 +6,7 @@
     <AssemblyName>ODModelBuilderTF_Redist_Win_CUDA10_1_TF</AssemblyName>
     <RootNamespace>ODModelBuilderTF_Redist_Win_CUDA10_1_TF</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Description>Windows redistributables for the ODModelBuilderTF library with TensorFlow 2.4.1 compiled for CUDA 10.1</Description>
+    <Description>Windows redistributables for the ODModelBuilderTF library with TensorFlow 2.4.3 compiled for CUDA 10.1</Description>
     <Copyright>Copyright 2021 Luigi Generale</Copyright>
     <PackageLicenseExpression />
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
@@ -20,7 +20,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Version>2.4.1.1</Version>
+    <Version>2.4.3</Version>
     <Authors>Luigi Generale</Authors>
     <Product>ODModelBuilderTF TensorFlow 2.4.1 / Cuda10.1 redistributables</Product>
     <SignAssembly>true</SignAssembly>

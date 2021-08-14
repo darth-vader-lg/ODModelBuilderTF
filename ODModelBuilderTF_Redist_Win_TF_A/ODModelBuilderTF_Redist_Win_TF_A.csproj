@@ -6,7 +6,7 @@
     <AssemblyName>ODModelBuilderTF_Redist_Win_TF_A</AssemblyName>
     <RootNamespace>ODModelBuilderTF_Redist_Win_TF_A</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Description>Windows redistributables for the ODModelBuilderTF library with TensorFlow 2.4.1 (first lib part)</Description>
+    <Description>Windows redistributables for the ODModelBuilderTF library with TensorFlow 2.4.3 (first lib part)</Description>
     <Copyright>Copyright 2021 Luigi Generale</Copyright>
     <PackageLicenseExpression />
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
@@ -20,9 +20,9 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Version>2.4.1.1</Version>
+    <Version>2.4.3</Version>
     <Authors>Luigi Generale</Authors>
-    <Product>ODModelBuilderTF TensorFlow 2.4.1 redistributables (lib first part)</Product>
+    <Product>ODModelBuilderTF TensorFlow 2.4.3 redistributables (lib first part)</Product>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>ODModelBuilderTF.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
