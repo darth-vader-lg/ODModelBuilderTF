@@ -45,7 +45,7 @@ namespace ODModelBuilderTF_Con
             Console.WriteLine($"Step number:{e.StepNumber}\t\tstep time: {e.StepTime:N3} secs\t\ttotal loss:{e.TotalLoss:N3}");
             if (loss == null)
                loss = e.TotalLoss;
-            else if (e.TotalLoss < loss) {
+            else if (e.TotalLoss < loss && e.TotalLoss < 1.0) {
                loss = e.TotalLoss;
                e.CreateCheckpoint = true;
                Console.WriteLine($"{new string('=', 40)}> Create checkpoint with total loss {e.TotalLoss}");
