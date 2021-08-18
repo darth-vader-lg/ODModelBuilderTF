@@ -131,12 +131,126 @@
       CoreCompile
     </BuildDependsOn>
   </PropertyGroup>
+  <UsingTask TaskName="UpdateRequirements" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <ParameterGroup />
+    <Task>
+      <Code Type="Fragment" Language="cs">
+        if (File.Exists(@"$(ProjectDir)requirements.txt")) {
+          var reqs = File.ReadAllLines(@"$(ProjectDir)requirements.txt").ToList();
+          var GetSpecialRequirement = new Func&lt;string, string, Tuple&lt;string, int&gt;&gt;((req, prefix) =&gt;
+          {
+            for (var i = 0; i &lt; reqs.Count; i++) {
+              var rTrim = reqs[i].Trim();
+              if (!string.IsNullOrEmpty(prefix)) {
+                if (!rTrim.StartsWith(prefix))
+                  continue;
+                rTrim = rTrim.Substring(prefix.Length).TrimStart();
+              }
+              if (!rTrim.StartsWith(req))
+                continue;
+              rTrim = rTrim.Substring(req.Length).TrimStart();
+              if (!rTrim.StartsWith("="))
+                continue;
+              while (rTrim.StartsWith("="))
+                rTrim = rTrim.Substring(1).TrimStart();
+              return new Tuple&lt;string, int&gt;(rTrim, i);
+            }
+            return new Tuple&lt;string, int&gt;(null, -1);
+          });
+          var writeReqs = false;
+          var UpdateSpecialRequirement = new Action&lt;string, string, string&gt;((req, prefix, ver) =&gt;
+          {
+            var sr = GetSpecialRequirement(req, prefix);
+            if (!string.IsNullOrEmpty(sr.Item1)) {
+              if (sr.Item1 != ver) {
+                if (!string.IsNullOrEmpty(ver))
+                  reqs[sr.Item2] = (prefix ?? "") + req + "==" + ver;
+                else
+                  reqs[sr.Item2] = "";
+                writeReqs = true;
+              }
+            }
+            else if (!string.IsNullOrEmpty(ver)) {
+                reqs.Append((prefix ?? "") + req + "==" + ver);
+                writeReqs = true;
+            }
+          });
+          UpdateSpecialRequirement("object-detection", null, @"$(ObjectDetectionVersion)");
+          UpdateSpecialRequirement("object-detection-repo", "#@", @"$(ObjectDetectionRepository)");
+          UpdateSpecialRequirement("object-detection-ref", "#@", @"$(ObjectDetectionRepositoryRef)");
+          UpdateSpecialRequirement("tensorflow", null, @"$(TensorFlowVersion)");
+          UpdateSpecialRequirement("tensorflow-cuda10", "#@", @"$(TensorCuda10Url)");
+          UpdateSpecialRequirement("tf2onnx", null, @"$(TF2OnnxVersion)");
+          UpdateSpecialRequirement("tf2onnx-repo", "#@", @"$(TF2OnnxRepository)");
+          UpdateSpecialRequirement("tf2onnx-ref", "#@", @"$(TF2OnnxRepositoryRef)");
+          if (writeReqs) {
+            Log.LogMessage(MessageImportance.High, "Updating requirements");
+            File.WriteAllLines(@"$(ProjectDir)requirements.txt", reqs.Where(r =&gt; !string.IsNullOrEmpty(r)));
+          }
+        }
+        var writeIpynb = false;
+        if (File.Exists(@"$(ProjectDir)ODModelBuilderTF.ipynb")) {
+          var ipynb = File.ReadAllLines(@"$(ProjectDir)ODModelBuilderTF.ipynb");
+          var UpdateIpynb = new Action&lt;string, string&gt;((id, value) =&gt;
+          {
+            id = id + "=";
+            for (var i = 0; i &lt; ipynb.Length; i++) {
+              var l = ipynb[i].Replace(" ", "").Replace("\t", "");
+              if (l.Contains(id)) {
+                l = ipynb[i];
+                var ixStart = l.IndexOf('\'');
+                if (ixStart &gt; -1) {
+                  var ixEnd = l.IndexOf('\'', ixStart + 1);
+                  if (ixEnd &gt; -1) {
+                    var currentValue = l.Substring(ixStart + 1, ixEnd - ixStart - 1).Trim();
+                    if (currentValue != value) {
+                      ipynb[i] = l.Replace(currentValue, value);
+                      writeIpynb = true;
+                    }
+                  }
+                }
+              }
+            }
+          });
+          UpdateIpynb("repo_url", "$(RepositoryUrl)");
+          UpdateIpynb("repo_ref", "$(RepositoryRef)");
+          for (var i = 0; i &lt; ipynb.Length; i++) {
+            var l = ipynb[i].Replace(" ", "").Replace("\t", "").ToLower();
+            if (l.Contains("objectdetectiontrain") &amp;&amp; l.Contains("withtensorflow") ) {
+              l = ipynb[i];
+              var ixStart = l.ToLower().IndexOf("train");
+              if (ixStart &gt; -1) {
+                var release = new string(l.ToCharArray().Skip(ixStart + "train".Length).SkipWhile(c =&gt; c == ' ' || c == '\t').TakeWhile(c =&gt; c != ' ' &amp;&amp; c != '\t').ToArray());
+                if (release != "$(ObjectDetectionVersion)") {
+                  ipynb[i] = ipynb[i].Replace(release, "$(ObjectDetectionVersion)");
+                  writeIpynb = true;
+                }
+              }
+              ixStart = l.ToLower().IndexOf("tensorflow");
+              if (ixStart &gt; -1) {
+                var release = new string(l.ToCharArray().Skip(ixStart + "tensorflow".Length).SkipWhile(c =&gt; c == ' ' || c == '\t').TakeWhile(c =&gt; c != ' ' &amp;&amp; c != '\t' &amp;&amp; c != '\\').ToArray());
+                if (release != "$(TensorFlowVersion)") {
+                  ipynb[i] = ipynb[i].Replace(release, "$(TensorFlowVersion)");
+                  writeIpynb = true;
+                }
+              }
+            }
+          }
+          if (writeIpynb) {
+            Log.LogMessage(MessageImportance.High, "Updating Colab notebook");
+            File.WriteAllLines(@"$(ProjectDir)ODModelBuilderTF.ipynb", ipynb);
+          }
+        }
+      </Code>
+    </Task>
+  </UsingTask>
   <Target Name="Clean">
-    <Exec Condition="Exists('$(ProjectDir)env')" Command="PowerShell -NoProfile -ExecutionPolicy Bypass -Command &quot;rd -Recurse '$(ProjectDir)env'&quot;" />
+    <Exec Condition="Exists('$(ProjectDir)env')" Command="PowerShell -NoProfile -ExecutionPolicy Bypass -Command &quot;rd -Recurse -Force '$(ProjectDir)env'&quot;" />
     <Delete Condition="Exists('$(OutputPath)env\env.info')" Files="$(OutputPath)env\env.info" />
   </Target>
   <Target Name="CoreCompile">
     <Message Importance="High" Text="Checking the virtual environment" />
+    <UpdateRequirements />
     <Exec Command="$(ProjectDir)install_virtual_environment.cmd" />
   </Target>
 </Project>

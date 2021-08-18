@@ -5,32 +5,19 @@
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
     <AssemblyName>ODModelBuilderTF_Redist_Win</AssemblyName>
     <RootNamespace>ODModelBuilderTF_Redist_Win</RootNamespace>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Description>Windows redistributables for the ODModelBuilderTF library with object detection 2.4.0</Description>
-    <Copyright>Copyright 2021 Luigi Generale</Copyright>
-    <PackageLicenseExpression />
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageProjectUrl>https://github.com/darth-vader-lg/ODModelBuilderTF</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/darth-vader-lg/ODModelBuilderTF.git</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <NeutralLanguage />
-    <PackageId>ODModelBuilderTF-Redist-Win</PackageId>
-    <Platforms>AnyCPU</Platforms>
-    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <Version>2.4.0.2</Version>
+    <VersionPrefix>$(ODModelBuilderRedistVersion)</VersionPrefix>
     <Authors>Luigi Generale</Authors>
     <Product>ODModelBuilderTF redistributables</Product>
+    <Description>Windows redistributables for the ODModelBuilderTF library with object detection $(ObjectDetectionVersion)</Description>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>ODModelBuilderTF.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <PythonProject>$(ProjectDir)..\ODModelBuilderTF_Py\</PythonProject>
-    <PythonProjectEnv>$(PythonProject)env\</PythonProjectEnv>
-    <PythonProjectOut>$(PythonProjectEnv)env.info</PythonProjectOut>
+    <AssemblyOriginatorKeyFile>..\ODModelBuilderTF.snk</AssemblyOriginatorKeyFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>$(PrefixID)ODModelBuilderTF-Redist-Win</PackageId>
+    <PackageLicenseExpression />
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <NeutralLanguage />
+    <Platforms>AnyCPU</Platforms>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
   </PropertyGroup>
 
   <ItemGroup>
@@ -40,6 +27,12 @@
       <PackagePath></PackagePath>
     </None>
   </ItemGroup>
+
+  <PropertyGroup>
+    <PythonProject>$(ProjectDir)..\ODModelBuilderTF_Py\</PythonProject>
+    <PythonProjectEnv>$(PythonProject)env\</PythonProjectEnv>
+    <PythonProjectOut>$(PythonProjectEnv)env.info</PythonProjectOut>
+  </PropertyGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="$(TargetDir)env.zip" Condition="$(ConfigurationName) != 'Debug'" />
@@ -51,7 +44,7 @@
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
   </Target>
-  
+
   <UsingTask TaskName="ZipPyEnvironment" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
     <ParameterGroup />
     <Task>

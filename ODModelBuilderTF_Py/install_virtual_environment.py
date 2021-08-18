@@ -91,7 +91,7 @@ def install_virtual_environment(env_name: str=env_name, requirements='requiremen
         if (base_packages_installed):
             return
         install('pip', ['--upgrade', '-c', requirements])
-        install('setuptools', ['-c', requirements])
+        install('setuptools', ['--upgrade', '-c', requirements])
         installed_packages = installed_packages + 1
         base_packages_installed = True
     # Check of missing packages

@@ -36,12 +36,3 @@ class Cfg(object):
     #@markdown The size of the batch. If < 1 the value contained in the model pipeline configuration will be used
     batch_size = 16 #@param {type:"integer"}
     #@markdown ---
-    # TensorFlow version
-    tensorflow_version = 'tensorflow==2.4.3' # or for example tf-nightly==2.5.0.dev20210315
-    tensorflow_cuda10 = 'https://www.dropbox.com/s/9n5i373wsv9mbkf/tensorflow-2.4.3-cp37-cp37m-win_amd64.whl?dl=1'
-    # TensorFlow object detection api location and reference
-    od_api_git_repo = 'https://github.com/darth-vader-lg/models.git'
-    od_api_git_ref = 'odv2.4.0'
-    # ONNX conversion tool location and reference
-    tf2onnx_git_repo = None
-    tf2onnx_git_ref = None

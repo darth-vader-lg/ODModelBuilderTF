@@ -5,32 +5,19 @@
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
     <AssemblyName>ODModelBuilderTF</AssemblyName>
     <RootNamespace>ODModelBuilderTF</RootNamespace>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Description>DotNet Train, evaluation, export library for TensorFlow object detection.</Description>
-    <Copyright>Copyright 2021 Luigi Generale</Copyright>
-    <PackageLicenseExpression />
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageProjectUrl>https://github.com/darth-vader-lg/ODModelBuilderTF</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/darth-vader-lg/ODModelBuilderTF.git</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <NeutralLanguage />
-    <PackageId>ODModelBuilderTF</PackageId>
-    <Platforms>AnyCPU</Platforms>
-    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <Version>1.1.2</Version>
+    <VersionPrefix>$(ODModelBuilderTFVersion)</VersionPrefix>
     <Authors>Luigi Generale</Authors>
     <Product>ODModelBuilderTF Library</Product>
+    <Description>DotNet Train, evaluation, export library for TensorFlow object detection $(ObjectDetectionVersion).</Description>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>ODModelBuilderTF.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <PythonProject>$(ProjectDir)..\ODModelBuilderTF_Py\</PythonProject>
-    <PythonProjectEnv>$(PythonProject)env\</PythonProjectEnv>
-    <PythonProjectOut>$(PythonProjectEnv)env.info</PythonProjectOut>
+    <AssemblyOriginatorKeyFile>..\ODModelBuilderTF.snk</AssemblyOriginatorKeyFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>$(PrefixID)ODModelBuilderTF</PackageId>
+    <PackageLicenseExpression />
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <NeutralLanguage />
+    <Platforms>AnyCPU</Platforms>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
   </PropertyGroup>
 
   <ItemGroup>
@@ -40,6 +27,12 @@
       <PackagePath></PackagePath>
     </None>
   </ItemGroup>
+
+  <PropertyGroup>
+    <PythonProject>$(ProjectDir)..\ODModelBuilderTF_Py\</PythonProject>
+    <PythonProjectEnv>$(PythonProject)env\</PythonProjectEnv>
+    <PythonProjectOut>$(PythonProjectEnv)env.info</PythonProjectOut>
+  </PropertyGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="$(PythonProject)requirements.txt" Link="py\requirements.txt" />

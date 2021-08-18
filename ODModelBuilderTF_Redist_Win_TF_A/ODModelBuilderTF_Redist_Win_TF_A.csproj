@@ -5,32 +5,19 @@
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
     <AssemblyName>ODModelBuilderTF_Redist_Win_TF_A</AssemblyName>
     <RootNamespace>ODModelBuilderTF_Redist_Win_TF_A</RootNamespace>
+    <VersionPrefix>$(ODModelBuilderRedistVersion)</VersionPrefix>
+    <Authors>Luigi Generale</Authors>
+    <Product>ODModelBuilderTF TensorFlow $(TensorFlowVersion) redistributables (lib first part)</Product>
+    <Description>Windows redistributables for the ODModelBuilderTF library with TensorFlow $(TensorFlowVersion) (first lib part)</Description>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\ODModelBuilderTF.snk</AssemblyOriginatorKeyFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Description>Windows redistributables for the ODModelBuilderTF library with TensorFlow 2.4.3 (first lib part)</Description>
-    <Copyright>Copyright 2021 Luigi Generale</Copyright>
+    <PackageId>$(PrefixID)ODModelBuilderTF-Redist-Win-TF-A</PackageId>
     <PackageLicenseExpression />
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageProjectUrl>https://github.com/darth-vader-lg/ODModelBuilderTF</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/darth-vader-lg/ODModelBuilderTF.git</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
     <NeutralLanguage />
-    <PackageId>ODModelBuilderTF-Redist-Win-TF-A</PackageId>
     <Platforms>AnyCPU</Platforms>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <Version>2.4.3</Version>
-    <Authors>Luigi Generale</Authors>
-    <Product>ODModelBuilderTF TensorFlow 2.4.3 redistributables (lib first part)</Product>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>ODModelBuilderTF.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <PythonProject>$(ProjectDir)..\ODModelBuilderTF_Py\</PythonProject>
-    <PythonProjectEnv>$(PythonProject)env\</PythonProjectEnv>
-    <PythonProjectOut>$(PythonProjectEnv)env.info</PythonProjectOut>
   </PropertyGroup>
 
   <ItemGroup>
@@ -40,6 +27,12 @@
       <PackagePath></PackagePath>
     </None>
   </ItemGroup>
+
+  <PropertyGroup>
+    <PythonProject>$(ProjectDir)..\ODModelBuilderTF_Py\</PythonProject>
+    <PythonProjectEnv>$(PythonProject)env\</PythonProjectEnv>
+    <PythonProjectOut>$(PythonProjectEnv)env.info</PythonProjectOut>
+  </PropertyGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="$(TargetDir)env.zip" Condition="$(ConfigurationName) != 'Debug'" />

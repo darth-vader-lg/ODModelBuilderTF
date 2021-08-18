@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+
+  <!-- The versions of the Object detection library and its redistributables -->
+  <PropertyGroup>
+    <ODModelBuilderTFVersion>2.0.0</ODModelBuilderTFVersion>
+    <ODModelBuilderRedistVersion>2.0.0</ODModelBuilderRedistVersion>
+  </PropertyGroup>
+
+  <!-- The version and location of the repository of the object detection from TensorFlow models -->
+  <PropertyGroup>
+    <ObjectDetectionVersion>2.4.3</ObjectDetectionVersion>
+    <!-- Leave blank to skip repository fetch -->
+    <ObjectDetectionRepository>https://github.com/darth-vader-lg/models.git</ObjectDetectionRepository>
+    <!-- Leave blank to skip repository fetch -->
+    <ObjectDetectionRepositoryRef>object-detection/v2.4.3</ObjectDetectionRepositoryRef>
+  </PropertyGroup>
+
+  <!-- The TensorFlow version to use -->
+  <PropertyGroup>
+    <TensorFlowVersion>2.4.3</TensorFlowVersion>
+    <!-- Leave blank if special tensorflow version doesn't exist -->
+    <TensorCuda10Url>https://www.dropbox.com/s/tswyj3a55f2vs2e/tensorflow-2.4.3-cp37-cp37m-win_amd64.whl?dl=1</TensorCuda10Url>
+  </PropertyGroup>
+
+  <!-- The Onnx converter version -->
+  <PropertyGroup>
+    <TF2OnnxVersion>1.9.1</TF2OnnxVersion>
+    <!-- Leave blank to skip repository fetch -->
+    <TF2OnnxRepository></TF2OnnxRepository>
+    <!-- Leave blank to skip repository fetch -->
+    <TF2OnnxRepositoryRef></TF2OnnxRepositoryRef>
+  </PropertyGroup>
+
+  <!-- Common product's info -->
+  <PropertyGroup>
+    <PrefixId>LG.</PrefixId>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <RepositoryUrl>https://github.com/darth-vader-lg/ODModelBuilderTF</RepositoryUrl>
+    <RepositoryRef>master</RepositoryRef>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/darth-vader-lg/ODModelBuilderTF</PackageProjectUrl>
+    <Copyright>Copyright 2021 Luigi Generale</Copyright>
+  </PropertyGroup>
+
+  <!-- Optional version suffix -->
+  <PropertyGroup>
+    <VersionSuffix></VersionSuffix>
+  </PropertyGroup>
+
+</Project>

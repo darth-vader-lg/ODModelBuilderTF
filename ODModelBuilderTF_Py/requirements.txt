@@ -50,7 +50,9 @@ matplotlib==3.4.2
 numpy==1.19.5
 oauth2client==4.1.3
 oauthlib==3.1.1
-object-detection==2.4.0
+object-detection==2.4.3
+#@object-detection-repo==https://github.com/darth-vader-lg/models.git
+#@object-detection-ref=object-detection/v2.4.3
 onnx==1.9.0
 opencv-python==4.5.2.54
 opencv-python-headless==4.5.2.54
@@ -90,6 +92,7 @@ tensorboard==2.5.0
 tensorboard-data-server==0.6.1
 tensorboard-plugin-wit==1.8.0
 tensorflow==2.4.3
+#@tensorflow-cuda10=https://www.dropbox.com/s/tswyj3a55f2vs2e/tensorflow-2.4.3-cp37-cp37m-win_amd64.whl?dl=1
 tensorflow-addons==0.13.0
 tensorflow-datasets==4.3.0
 tensorflow-estimator==2.4.0
