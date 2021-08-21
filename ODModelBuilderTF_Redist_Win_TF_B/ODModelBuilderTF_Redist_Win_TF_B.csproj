@@ -5,6 +5,7 @@
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
     <AssemblyName>ODModelBuilderTF_Redist_Win_TF_B</AssemblyName>
     <RootNamespace>ODModelBuilderTF_Redist_Win_TF_B</RootNamespace>
+    <VersionPrefix>$(ODModelBuilderRedistVersion)</VersionPrefix>
     <Authors>Luigi Generale</Authors>
     <Product>ODModelBuilderTF TensorFlow $(TensorFlowVersion) redistributables (lib second part)</Product>
     <Description>Windows redistributables for the ODModelBuilderTF library with TensorFlow $(TensorFlowVersion) (second lib part)</Description>
