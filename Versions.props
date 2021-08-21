@@ -37,7 +37,7 @@
     <PrefixId>LG.</PrefixId>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RepositoryUrl>https://github.com/darth-vader-lg/ODModelBuilderTF</RepositoryUrl>
-    <RepositoryRef>master</RepositoryRef>
+    <RepositoryRef>v2.0.0</RepositoryRef>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/darth-vader-lg/ODModelBuilderTF</PackageProjectUrl>
     <Copyright>Copyright 2021 Luigi Generale</Copyright>
