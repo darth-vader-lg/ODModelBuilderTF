@@ -22,24 +22,24 @@ If you prefer to have a ready to use environment (or your device is offline) you
 For a quick usage example you can take a look to the console application included in this repository, used to test the library.
 
 ## Packages
-[ODModelBuilderTF](https://www.nuget.org/packages/ODModelBuilderTF): the train library.<BR>
-[ODModelBuilderTF-Redist-Win](https://www.nuget.org/packages/ODModelBuilderTF-Redist-Win): the redistributable with TensorFlow object detection packages.<BR>
-[ODModelBuilderTF-Redist-Win-TF](https://www.nuget.org/packages/ODModelBuilderTF-Redist-Win-TF): the redistributable with TensorFlow packages.
-* [ODModelBuilderTF-Redist-Win-TF-A](https://www.nuget.org/packages/ODModelBuilderTF-Redist-Win-TF-A): the redistributable with TensorFlow library (part A).<BR>
-* [ODModelBuilderTF-Redist-Win-TF-B](https://www.nuget.org/packages/ODModelBuilderTF-Redist-Win-TF-B): the redistributable with TensorFlow library (part B).<BR>
+[LG.ODModelBuilderTF](https://www.nuget.org/packages/LG.ODModelBuilderTF): the train library.<BR>
+[LG.ODModelBuilderTF-Redist-Win](https://www.nuget.org/packages/LG.ODModelBuilderTF-Redist-Win): the redistributable with TensorFlow object detection packages.<BR>
+[LG.ODModelBuilderTF-Redist-Win-TF](https://www.nuget.org/packages/LG.ODModelBuilderTF-Redist-Win-TF): the redistributable with TensorFlow packages.
+* [LG.ODModelBuilderTF-Redist-Win-TF-A](https://www.nuget.org/packages/LG.ODModelBuilderTF-Redist-Win-TF-A): the redistributable with TensorFlow library (part A).<BR>
+* [LG.ODModelBuilderTF-Redist-Win-TF-B](https://www.nuget.org/packages/LG.ODModelBuilderTF-Redist-Win-TF-B): the redistributable with TensorFlow library (part B).<BR>
 
-[ ODModelBuilderTF-Redist-Win-CUDA10-1-TF](https://www.nuget.org/packages/ODModelBuilderTF-Redist-Win-CUDA10-1-TF): the redistributable with a special TensorFlow library for old GPUs which can work with CUDA 10.1 SM30. To use instead of the ODModelBuilderTF-Redist-Win-TF (CUDA 11) in old devices.<BR>
+[LG.ODModelBuilderTF-Redist-Win-CUDA10_1-TF](https://www.nuget.org/packages/LG.ODModelBuilderTF-Redist-Win-CUDA10_1-TF): the redistributable with a special TensorFlow library for old GPUs which can work with CUDA 10.1 SM30. To use instead of the ODModelBuilderTF-Redist-Win-TF (CUDA 11) in old devices.<BR>
 
 ### Simple installation with environment download at the first run:
-[ODModelBuilderTF](https://www.nuget.org/packages/ODModelBuilderTF)
+[LG.ODModelBuilderTF](https://www.nuget.org/packages/LG.ODModelBuilderTF)
 ### Installation with full environment:
-[ODModelBuilderTF](https://www.nuget.org/packages/ODModelBuilderTF),
-[ODModelBuilderTF-Redist-Win](https://www.nuget.org/packages/ODModelBuilderTF-Redist-Win),
-[ODModelBuilderTF-Redist-Win-TF](https://www.nuget.org/packages/ODModelBuilderTF-Redist-Win-TF)
+[LG.ODModelBuilderTF](https://www.nuget.org/packages/LG.ODModelBuilderTF),
+[LG.ODModelBuilderTF-Redist-Win](https://www.nuget.org/packages/LG.ODModelBuilderTF-Redist-Win),
+[LG.ODModelBuilderTF-Redist-Win-TF](https://www.nuget.org/packages/LG.ODModelBuilderTF-Redist-Win-TF)
 ### Installation on old GPUs:
-[ODModelBuilderTF](https://www.nuget.org/packages/ODModelBuilderTF),
-[ODModelBuilderTF-Redist-Win](https://www.nuget.org/packages/ODModelBuilderTF-Redist-Win),
-[ ODModelBuilderTF-Redist-Win-CUDA10-1-TF](https://www.nuget.org/packages/ODModelBuilderTF-Redist-Win-CUDA10-1-TF)
+[LG.ODModelBuilderTF](https://www.nuget.org/packages/LG.ODModelBuilderTF),
+[LG.ODModelBuilderTF-Redist-Win](https://www.nuget.org/packages/LG.ODModelBuilderTF-Redist-Win),
+[LG.ODModelBuilderTF-Redist-Win-CUDA10_1-TF](https://www.nuget.org/packages/LG.ODModelBuilderTF-Redist-Win-CUDA10_1-TF)
 
 ## Building ODModelBuilderTF
 
@@ -128,4 +128,4 @@ It's possible to test / train directly on a google colab environment using the n
 
 ## License
 
-ML.NET is licensed under the [MIT license](LICENSE) and it is free to use commercially.
+ODModelBuilderTF is licensed under the [MIT license](LICENSE) and it is free to use commercially.
