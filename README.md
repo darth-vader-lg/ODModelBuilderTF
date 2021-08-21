@@ -123,6 +123,9 @@ namespace ODModelBuilderTF_Con
 }
 ```
 
+## Colab notebook
+It's possible to test / train directly on a google colab environment using the notebook [ODModelBuilderTF.ipynb](https://colab.research.google.com/github/darth-vader-lg/ODModelBuilderTF/blob/master/ODModelBuilderTF_Py/ODModelBuilderTF.ipynb)
+
 ## License
 
 ML.NET is licensed under the [MIT license](LICENSE) and it is free to use commercially.
