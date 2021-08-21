@@ -108,7 +108,8 @@ def install_object_detection(requirements:str=None, no_cache=True):
         os.chdir(os.path.join(od_api_dir, 'research'))
         # Install the protobuf tools
         if (not get_package_info('grpcio-tools').name):
-            install('grpcio-tools', install_extra_args)
+            tf_package_info = get_package_info('grpcio', True)
+            install('grpcio-tools' + '~=' + tf_package_info.version, install_extra_args)
         # Compile the protobufs
         print(f'Compiling the protobufs')
         import grpc_tools.protoc as protoc
