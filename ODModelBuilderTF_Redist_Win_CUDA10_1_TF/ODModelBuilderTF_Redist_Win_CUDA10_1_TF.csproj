@@ -12,7 +12,7 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\ODModelBuilderTF.snk</AssemblyOriginatorKeyFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageId>$(PrefixID)ODModelBuilderTF_Redist_Win_CUDA10_1_TF</PackageId>
+    <PackageId>$(PrefixID)ODModelBuilderTF-Redist-Win-CUDA10_1-TF</PackageId>
     <PackageLicenseExpression />
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <NeutralLanguage />
