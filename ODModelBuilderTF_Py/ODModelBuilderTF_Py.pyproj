@@ -101,6 +101,7 @@
     <Content Include="env_shell.cmd" />
     <Content Include="Packages\pycocotools-2.0.2-cp37-cp37m-win_amd64.whl" />
     <Content Include="py_to_ODModelBuilderTF_ipynb.bat" />
+    <Content Include="requirements-colab.txt" />
     <Content Include="requirements.txt" />
     <Content Include="set_sync_jupyter_notebook_env.bat" />
     <Content Include="ODModelBuilderTF.ipynb" />
@@ -135,59 +136,64 @@
     <ParameterGroup />
     <Task>
       <Code Type="Fragment" Language="cs">
-        if (File.Exists(@"$(ProjectDir)requirements.txt")) {
-          var reqs = File.ReadAllLines(@"$(ProjectDir)requirements.txt").ToList();
-          var GetSpecialRequirement = new Func&lt;string, string, Tuple&lt;string, int&gt;&gt;((req, prefix) =&gt;
-          {
-            for (var i = 0; i &lt; reqs.Count; i++) {
-              var rTrim = reqs[i].Trim();
-              if (!string.IsNullOrEmpty(prefix)) {
-                if (!rTrim.StartsWith(prefix))
+        var UpdateRequirementsFile = new Action&lt;string&gt;(path =&gt;
+        {
+          if (File.Exists(@"$(ProjectDir)requirements.txt")) {
+            var reqs = File.ReadAllLines(@"$(ProjectDir)requirements.txt").ToList();
+            var GetSpecialRequirement = new Func&lt;string, string, Tuple&lt;string, int&gt;&gt;((req, prefix) =&gt;
+            {
+              for (var i = 0; i &lt; reqs.Count; i++) {
+                var rTrim = reqs[i].Trim();
+                if (!string.IsNullOrEmpty(prefix)) {
+                  if (!rTrim.StartsWith(prefix))
+                    continue;
+                  rTrim = rTrim.Substring(prefix.Length).TrimStart();
+                }
+                if (!rTrim.StartsWith(req))
                   continue;
-                rTrim = rTrim.Substring(prefix.Length).TrimStart();
+                rTrim = rTrim.Substring(req.Length).TrimStart();
+                if (!rTrim.StartsWith("="))
+                  continue;
+                while (rTrim.StartsWith("="))
+                  rTrim = rTrim.Substring(1).TrimStart();
+                return new Tuple&lt;string, int&gt;(rTrim, i);
               }
-              if (!rTrim.StartsWith(req))
-                continue;
-              rTrim = rTrim.Substring(req.Length).TrimStart();
-              if (!rTrim.StartsWith("="))
-                continue;
-              while (rTrim.StartsWith("="))
-                rTrim = rTrim.Substring(1).TrimStart();
-              return new Tuple&lt;string, int&gt;(rTrim, i);
-            }
-            return new Tuple&lt;string, int&gt;(null, -1);
-          });
-          var writeReqs = false;
-          var UpdateSpecialRequirement = new Action&lt;string, string, string&gt;((req, prefix, ver) =&gt;
-          {
-            var sr = GetSpecialRequirement(req, prefix);
-            if (!string.IsNullOrEmpty(sr.Item1)) {
-              if (sr.Item1 != ver) {
-                if (!string.IsNullOrEmpty(ver))
-                  reqs[sr.Item2] = (prefix ?? "") + req + "==" + ver;
-                else
-                  reqs[sr.Item2] = "";
-                writeReqs = true;
+              return new Tuple&lt;string, int&gt;(null, -1);
+            });
+            var writeReqs = false;
+            var UpdateSpecialRequirement = new Action&lt;string, string, string&gt;((req, prefix, ver) =&gt;
+            {
+              var sr = GetSpecialRequirement(req, prefix);
+              if (!string.IsNullOrEmpty(sr.Item1)) {
+                if (sr.Item1 != ver) {
+                  if (!string.IsNullOrEmpty(ver))
+                    reqs[sr.Item2] = (prefix ?? "") + req + "==" + ver;
+                  else
+                    reqs[sr.Item2] = "";
+                  writeReqs = true;
+                }
               }
+              else if (!string.IsNullOrEmpty(ver)) {
+                  reqs.Append((prefix ?? "") + req + "==" + ver);
+                  writeReqs = true;
+              }
+            });
+            UpdateSpecialRequirement("object-detection", null, @"$(ObjectDetectionVersion)");
+            UpdateSpecialRequirement("object-detection-repo", "#@", @"$(ObjectDetectionRepository)");
+            UpdateSpecialRequirement("object-detection-ref", "#@", @"$(ObjectDetectionRepositoryRef)");
+            UpdateSpecialRequirement("tensorflow", null, @"$(TensorFlowVersion)");
+            UpdateSpecialRequirement("tensorflow-cuda10", "#@", @"$(TensorCuda10Url)");
+            UpdateSpecialRequirement("tf2onnx", null, @"$(TF2OnnxVersion)");
+            UpdateSpecialRequirement("tf2onnx-repo", "#@", @"$(TF2OnnxRepository)");
+            UpdateSpecialRequirement("tf2onnx-ref", "#@", @"$(TF2OnnxRepositoryRef)");
+            if (writeReqs) {
+              Log.LogMessage(MessageImportance.High, "Updating " + Path.GetFileName(path));
+              File.WriteAllLines(@"$(ProjectDir)requirements.txt", reqs.Where(r =&gt; !string.IsNullOrEmpty(r)));
             }
-            else if (!string.IsNullOrEmpty(ver)) {
-                reqs.Append((prefix ?? "") + req + "==" + ver);
-                writeReqs = true;
-            }
-          });
-          UpdateSpecialRequirement("object-detection", null, @"$(ObjectDetectionVersion)");
-          UpdateSpecialRequirement("object-detection-repo", "#@", @"$(ObjectDetectionRepository)");
-          UpdateSpecialRequirement("object-detection-ref", "#@", @"$(ObjectDetectionRepositoryRef)");
-          UpdateSpecialRequirement("tensorflow", null, @"$(TensorFlowVersion)");
-          UpdateSpecialRequirement("tensorflow-cuda10", "#@", @"$(TensorCuda10Url)");
-          UpdateSpecialRequirement("tf2onnx", null, @"$(TF2OnnxVersion)");
-          UpdateSpecialRequirement("tf2onnx-repo", "#@", @"$(TF2OnnxRepository)");
-          UpdateSpecialRequirement("tf2onnx-ref", "#@", @"$(TF2OnnxRepositoryRef)");
-          if (writeReqs) {
-            Log.LogMessage(MessageImportance.High, "Updating requirements");
-            File.WriteAllLines(@"$(ProjectDir)requirements.txt", reqs.Where(r =&gt; !string.IsNullOrEmpty(r)));
           }
-        }
+        });
+        UpdateRequirementsFile(@"$(ProjectDir)requirements.txt");
+        UpdateRequirementsFile(@"$(ProjectDir)requirements-colab.txt");
         var writeIpynb = false;
         if (File.Exists(@"$(ProjectDir)ODModelBuilderTF.ipynb")) {
           var ipynb = File.ReadAllLines(@"$(ProjectDir)ODModelBuilderTF.ipynb");

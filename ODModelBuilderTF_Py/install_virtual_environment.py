@@ -113,10 +113,21 @@ def install_virtual_environment(env_name: str=env_name, requirements='requiremen
             print("Error! Couldn't install object detection api.")
             print(exc)
             return -1
+        # Install other requirements 
+        missing = check_requirements(requirements=requirements, no_deps=True) if (os.path.isfile(requirements)) else []
+        if (len(missing) > 0):
+            print("Still missing requirements:")
+            for r in missing:
+                print(r)
+            for r in missing:
+                install(str(r), ['--no-deps', '-c', requirements])
         # Check installation
         missing = check_requirements(requirements=requirements, no_deps=True) if (os.path.isfile(requirements)) else []
         if (len(missing) > 0):
             print("Error! Couldn't install object detection api.")
+            print('Missing requirements:')
+            for r in missing:
+                print(r)
             return -1
     # Uninstall the dataclasses package installed erroneusly (incompatible) for python >=3.7 by tf-models-official
     try:
