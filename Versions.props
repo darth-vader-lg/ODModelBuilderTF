@@ -3,24 +3,24 @@
 
   <!-- The versions of the Object detection library and its redistributables -->
   <PropertyGroup>
-    <ODModelBuilderTFVersion>2.0.0</ODModelBuilderTFVersion>
-    <ODModelBuilderRedistVersion>2.0.0</ODModelBuilderRedistVersion>
+    <ODModelBuilderTFVersion>2.1.0</ODModelBuilderTFVersion>
+    <ODModelBuilderRedistVersion>2.1.0</ODModelBuilderRedistVersion>
   </PropertyGroup>
 
   <!-- The version and location of the repository of the object detection from TensorFlow models -->
   <PropertyGroup>
-    <ObjectDetectionVersion>2.4.3</ObjectDetectionVersion>
+    <ObjectDetectionVersion>2.5.0</ObjectDetectionVersion>
     <!-- Leave blank to skip repository fetch -->
     <ObjectDetectionRepository>https://github.com/darth-vader-lg/models.git</ObjectDetectionRepository>
     <!-- Leave blank to skip repository fetch -->
-    <ObjectDetectionRepositoryRef>object-detection/v2.4.3</ObjectDetectionRepositoryRef>
+    <ObjectDetectionRepositoryRef>object-detection/v2.5.0</ObjectDetectionRepositoryRef>
   </PropertyGroup>
 
   <!-- The TensorFlow version to use -->
   <PropertyGroup>
-    <TensorFlowVersion>2.4.3</TensorFlowVersion>
+    <TensorFlowVersion>2.5.0</TensorFlowVersion>
     <!-- Leave blank if special tensorflow version doesn't exist -->
-    <TensorCuda10Url>https://www.dropbox.com/s/tswyj3a55f2vs2e/tensorflow-2.4.3-cp37-cp37m-win_amd64.whl?dl=1</TensorCuda10Url>
+    <TensorCuda10Url>https://www.dropbox.com/s/ycx5xbv482d9plv/tensorflow-2.5.0-cp37-cp37m-win_amd64.whl?dl=1</TensorCuda10Url>
   </PropertyGroup>
 
   <!-- The Onnx converter version -->
@@ -37,9 +37,10 @@
     <PrefixId>LG.</PrefixId>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RepositoryUrl>https://github.com/darth-vader-lg/ODModelBuilderTF</RepositoryUrl>
-    <RepositoryRef>v2.0.0</RepositoryRef>
+    <RepositoryRef>master</RepositoryRef>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/darth-vader-lg/ODModelBuilderTF</PackageProjectUrl>
+    <PackageTags>object-detection;training;machine-learning;computer-vision;csharp;dotnet;tensorflow;tensorflow2;onnx</PackageTags>
     <Copyright>Copyright 2021 Luigi Generale</Copyright>
   </PropertyGroup>
 
