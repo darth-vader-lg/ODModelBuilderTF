@@ -3,8 +3,8 @@
 
   <!-- The versions of the Object detection library and its redistributables -->
   <PropertyGroup>
-    <ODModelBuilderTFVersion>2.1.1</ODModelBuilderTFVersion>
-    <ODModelBuilderRedistVersion>2.1.1</ODModelBuilderRedistVersion>
+    <ODModelBuilderTFVersion>2.2.0</ODModelBuilderTFVersion>
+    <ODModelBuilderRedistVersion>2.2.0</ODModelBuilderRedistVersion>
   </PropertyGroup>
 
   <!-- The version and location of the repository of the object detection from TensorFlow models -->
@@ -37,7 +37,7 @@
     <PrefixId>LG.</PrefixId>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RepositoryUrl>https://github.com/darth-vader-lg/ODModelBuilderTF</RepositoryUrl>
-    <RepositoryRef>v2.1.1</RepositoryRef>
+    <RepositoryRef>master</RepositoryRef>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/darth-vader-lg/ODModelBuilderTF</PackageProjectUrl>
     <PackageTags>object-detection;training;machine-learning;computer-vision;csharp;dotnet;tensorflow;tensorflow2;onnx</PackageTags>
