@@ -9,18 +9,18 @@
 
   <!-- The version and location of the repository of the object detection from TensorFlow models -->
   <PropertyGroup>
-    <ObjectDetectionVersion>2.5.0</ObjectDetectionVersion>
+    <ObjectDetectionVersion>2.5.1</ObjectDetectionVersion>
     <!-- Leave blank to skip repository fetch -->
     <ObjectDetectionRepository>https://github.com/darth-vader-lg/models.git</ObjectDetectionRepository>
     <!-- Leave blank to skip repository fetch -->
-    <ObjectDetectionRepositoryRef>object-detection/v2.5.0</ObjectDetectionRepositoryRef>
+    <ObjectDetectionRepositoryRef>object-detection/v2.5.1</ObjectDetectionRepositoryRef>
   </PropertyGroup>
 
   <!-- The TensorFlow version to use -->
   <PropertyGroup>
-    <TensorFlowVersion>2.5.0</TensorFlowVersion>
+    <TensorFlowVersion>2.5.1</TensorFlowVersion>
     <!-- Leave blank if special tensorflow version doesn't exist -->
-    <TensorCuda10Url>https://www.dropbox.com/s/ycx5xbv482d9plv/tensorflow-2.5.0-cp37-cp37m-win_amd64.whl?dl=1</TensorCuda10Url>
+    <TensorCuda10Url>https://www.dropbox.com/s/ipgz6nkrzy6v2e4/tensorflow-2.5.1-cp37-cp37m-win_amd64.whl?dl=1</TensorCuda10Url>
   </PropertyGroup>
 
   <!-- The Onnx converter version -->
