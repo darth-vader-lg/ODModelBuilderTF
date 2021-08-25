@@ -140,7 +140,7 @@
         {
           if (File.Exists(@"$(ProjectDir)requirements.txt")) {
             var reqs = File.ReadAllLines(@"$(ProjectDir)requirements.txt").ToList();
-            var GetSpecialRequirement = new Func&lt;string, string, Tuple&lt;string, int&gt;&gt;((req, prefix) =&gt;
+            var GetSpecialRequirement = new Func&lt;string, string, Tuple&lt;string, string, int&gt;&gt;((req, prefix) =&gt;
             {
               for (var i = 0; i &lt; reqs.Count; i++) {
                 var rTrim = reqs[i].Trim();
@@ -152,13 +152,17 @@
                 if (!rTrim.StartsWith(req))
                   continue;
                 rTrim = rTrim.Substring(req.Length).TrimStart();
-                if (!rTrim.StartsWith("="))
+                var opList = new[] { '&lt;', '&gt;', '=', '!', '~' };
+                var op = "";
+                if (rTrim.Length > 0 &amp;&amp; !opList.Any(c =&gt; c == rTrim[0]))
                   continue;
-                while (rTrim.StartsWith("="))
+                while (rTrim.Length > 0 &amp;&amp; opList.Any(c =&gt; c == rTrim[0])) {
+                  op = op + new string(rTrim[0], 1);
                   rTrim = rTrim.Substring(1).TrimStart();
-                return new Tuple&lt;string, int&gt;(rTrim, i);
+                }
+                return new Tuple&lt;string, string, int&gt;(rTrim, op, i);
               }
-              return new Tuple&lt;string, int&gt;(null, -1);
+              return new Tuple&lt;string, string, int&gt;(null, null, -1);
             });
             var writeReqs = false;
             var UpdateSpecialRequirement = new Action&lt;string, string, string&gt;((req, prefix, ver) =&gt;
@@ -167,9 +171,9 @@
               if (!string.IsNullOrEmpty(sr.Item1)) {
                 if (sr.Item1 != ver) {
                   if (!string.IsNullOrEmpty(ver))
-                    reqs[sr.Item2] = (prefix ?? "") + req + "==" + ver;
+                    reqs[sr.Item3] = (prefix ?? "") + req + sr.Item2 + ver;
                   else
-                    reqs[sr.Item2] = "";
+                    reqs[sr.Item3] = "";
                   writeReqs = true;
                 }
               }
@@ -234,7 +238,7 @@
               }
               ixStart = l.ToLower().IndexOf("tensorflow");
               if (ixStart &gt; -1) {
-                var release = new string(l.ToCharArray().Skip(ixStart + "tensorflow".Length).SkipWhile(c =&gt; c == ' ' || c == '\t').TakeWhile(c =&gt; c != ' ' &amp;&amp; c != '\t' &amp;&amp; c != '\\').ToArray());
+                var release = new string(l.ToCharArray().Skip(ixStart + "tensorflow".Length).SkipWhile(c =&gt; new[] { ' ',  '\t', '&gt;', '=' }.Any(cs => cs == c)).TakeWhile(c =&gt; c != ' ' &amp;&amp; c != '\t' &amp;&amp; c != '\\').ToArray());
                 if (release != "$(TensorFlowVersion)") {
                   ipynb[i] = ipynb[i].Replace(release, "$(TensorFlowVersion)");
                   writeIpynb = true;
