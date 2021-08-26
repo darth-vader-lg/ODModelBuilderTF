@@ -9,18 +9,18 @@
 
   <!-- The version and location of the repository of the object detection from TensorFlow models -->
   <PropertyGroup>
-    <ObjectDetectionVersion>2.5.1</ObjectDetectionVersion>
+    <ObjectDetectionVersion>2.6.0</ObjectDetectionVersion>
     <!-- Leave blank to skip repository fetch -->
     <ObjectDetectionRepository>https://github.com/darth-vader-lg/models.git</ObjectDetectionRepository>
     <!-- Leave blank to skip repository fetch -->
-    <ObjectDetectionRepositoryRef>object-detection/v2.5.1</ObjectDetectionRepositoryRef>
+    <ObjectDetectionRepositoryRef>object-detection/v2.6.0</ObjectDetectionRepositoryRef>
   </PropertyGroup>
 
   <!-- The TensorFlow version to use -->
   <PropertyGroup>
-    <TensorFlowVersion>2.5.1</TensorFlowVersion>
+    <TensorFlowVersion>2.6.0</TensorFlowVersion>
     <!-- Leave blank if special tensorflow version doesn't exist -->
-    <TensorCuda10Url>https://www.dropbox.com/s/ipgz6nkrzy6v2e4/tensorflow-2.5.1-cp37-cp37m-win_amd64.whl?dl=1</TensorCuda10Url>
+    <TensorCuda10Url>https://www.dropbox.com/s/mk1lz5ylt1gd1n7/tensorflow-2.6.0-cp37-cp37m-win_amd64.whl?dl=1</TensorCuda10Url>
   </PropertyGroup>
 
   <!-- The Onnx converter version -->
@@ -37,7 +37,7 @@
     <PrefixId>LG.</PrefixId>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RepositoryUrl>https://github.com/darth-vader-lg/ODModelBuilderTF</RepositoryUrl>
-    <RepositoryRef>master</RepositoryRef>
+    <RepositoryRef>v2.2.0</RepositoryRef>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/darth-vader-lg/ODModelBuilderTF</PackageProjectUrl>
     <PackageTags>object-detection;training;machine-learning;computer-vision;csharp;dotnet;tensorflow;tensorflow2;onnx</PackageTags>
