@@ -33,7 +33,7 @@ namespace ODModelBuilderTF_Con
             ExportFolder = @"Data\Export",
             ModelType = ModelTypes.SSD_MobileNet_V2_320x320,
             NumTrainSteps = 50000,
-            TensorBoardPort = 6006,
+            TensorBoardPort = 16006,
             TrainFolder = @"Data\Train",
             TrainImagesFolder = @"Data\Images\Train",
             TrainRecordsFolder = @"Data\Records",
