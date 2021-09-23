@@ -14,14 +14,14 @@ models = {
     },
     'CenterNet Resnet101 V1 FPN 512x512': {
         'dir_name': 'centernet_resnet101_v1_fpn_512x512_coco17_tpu-8',
-        'download_path': 'http://download.tensorflow.org/models/object_detection/tf2/20200711/centernet_resnet50_v1_fpn_512x512_coco17_tpu-8.tar.gz'
+        'download_path': 'http://download.tensorflow.org/models/object_detection/tf2/20200711/centernet_resnet101_v1_fpn_512x512_coco17_tpu-8.tar.gz'
     },
     'CenterNet Resnet50 V2 512x512': {
         'dir_name': 'centernet_resnet50_v2_512x512_coco17_tpu-8',
         'download_path': 'http://download.tensorflow.org/models/object_detection/tf2/20200711/centernet_resnet50_v2_512x512_coco17_tpu-8.tar.gz'
     },
     'CenterNet MobileNetV2 FPN 512x512': {
-        'dir_name': 'CenterNet MobileNetV2 FPN 512x512.tar',
+        'dir_name': 'centernet_mobilenetv2_fpn_od',
         'download_path': 'http://download.tensorflow.org/models/object_detection/tf2/20210210/centernet_mobilenetv2fpn_512x512_coco17_od.tar.gz'
     },
     'EfficientDet D0 512x512': {
