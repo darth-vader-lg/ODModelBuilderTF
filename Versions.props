@@ -3,8 +3,8 @@
 
   <!-- The versions of the Object detection library and its redistributables -->
   <PropertyGroup>
-    <ODModelBuilderTFVersion>2.2.0</ODModelBuilderTFVersion>
-    <ODModelBuilderRedistVersion>2.2.0</ODModelBuilderRedistVersion>
+    <ODModelBuilderTFVersion>2.3.0</ODModelBuilderTFVersion>
+    <ODModelBuilderRedistVersion>2.3.0</ODModelBuilderRedistVersion>
   </PropertyGroup>
 
   <!-- The version and location of the repository of the object detection from TensorFlow models -->
@@ -46,7 +46,7 @@
 
   <!-- Optional version suffix -->
   <PropertyGroup>
-    <VersionSuffix></VersionSuffix>
+    <VersionSuffix>RC.1</VersionSuffix>
   </PropertyGroup>
 
 </Project>
