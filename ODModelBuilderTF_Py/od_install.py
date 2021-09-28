@@ -187,7 +187,7 @@ def install_object_detection(requirements:str=None, no_cache=True):
     try:
         if (get_package_info('object-detection').version):
             repo = pygit2.Repository(od_api_dir)
-            if ((od_api_dir == od_api_git_repo) or (repo.head.target.hex == repo.resolve_refish(od_api_git_ref).oid.hex)):
+            if ((od_api_dir == od_api_git_repo) or (repo.head.target.hex == repo.resolve_refish(od_api_git_ref)[0].oid.hex)):
                 is_installed = True
     except: pass
     # Install the TensorFlow models
