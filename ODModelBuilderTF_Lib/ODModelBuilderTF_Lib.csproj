@@ -37,6 +37,7 @@
   <ItemGroup>
     <EmbeddedResource Include="$(PythonProject)requirements.txt" Link="py\requirements.txt" />
     <EmbeddedResource Include="$(PythonProject)base_parameters.py" Link="py\base_parameters.py" />
+    <EmbeddedResource Include="$(PythonProject)converter_main.py" Link="py\converter_main.py" />
     <EmbeddedResource Include="$(PythonProject)default_cfg.py" Link="py\default_cfg.py" />
     <EmbeddedResource Include="$(PythonProject)eval_environment.py" Link="py\eval_environment.py" />
     <EmbeddedResource Include="$(PythonProject)eval_main.py" Link="py\eval_main.py" />

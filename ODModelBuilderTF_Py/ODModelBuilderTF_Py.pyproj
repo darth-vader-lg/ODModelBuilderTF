@@ -37,6 +37,9 @@
     <Compile Include="base_parameters.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="converter_main.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="default_cfg.py">
       <SubType>Code</SubType>
     </Compile>

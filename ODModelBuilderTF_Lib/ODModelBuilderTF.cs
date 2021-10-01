@@ -344,6 +344,7 @@ namespace ODModelBuilderTF
             "train_environment",
             "train_main",
             "train_pipeline",
+            "converter_main",
             "train_tensorboard",
          };
          foreach (var module in modules) {
