@@ -71,6 +71,9 @@
     <ProjectReference Include="..\ODModelBuilderTF_Redist_Win\ODModelBuilderTF_Redist_Win.csproj">
       <PrivateAssets>All</PrivateAssets>
     </ProjectReference>
+    <ProjectReference Include="..\ODModelBuilderTF_Redist_Win_PT\ODModelBuilderTF_Redist_Win_PT.csproj">
+      <PrivateAssets>All</PrivateAssets>
+    </ProjectReference>
     <ProjectReference Include="..\ODModelBuilderTF_Redist_Win_TF\ODModelBuilderTF_Redist_Win_TF.csproj">
       <PrivateAssets>All</PrivateAssets>
     </ProjectReference>

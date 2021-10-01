@@ -95,6 +95,7 @@ namespace ODModelBuilderTF
          var zipEnv = null as Stream;
          var zipTF = null as Stream;
          var zipTFParts = new List<Stream>();
+         var zipPT = null as Stream;
          try {
             var assembly = Assembly.Load("ODModelBuilderTF_Redist_Win");
             var resourceName = assembly.GetManifestResourceNames().FirstOrDefault(r => r.EndsWith($".env.zip"));
@@ -143,7 +144,16 @@ namespace ODModelBuilderTF
             }
          }
          catch { }
-         if (zipEnv != null && zipTF != null) {
+         // Check if the system doesn't still have the PyTorch installed and a redist containing the PyTorch is present
+         try {
+            if (zipPT == null) {
+               var assembly = Assembly.Load("ODModelBuilderTF_Redist_Win_PT");
+               var resourceName = assembly.GetManifestResourceNames().FirstOrDefault(r => r.EndsWith($".env.zip"));
+               zipPT = resourceName == null ? null : assembly.GetManifestResourceStream(resourceName);
+            }
+         }
+         catch { }
+         if (zipEnv != null && zipTF != null && zipPT != null) {
             using var archive = new ZipArchive(zipEnv);
             var extract = !Directory.Exists(virtualEnvPath);
             if (!extract) {
@@ -176,6 +186,8 @@ namespace ODModelBuilderTF
                      }
                   }
                }
+               using var ptArchive = new ZipArchive(zipPT);
+               ptArchive.ExtractToDirectory(virtualEnvPath, true);
             }
          }
          else {
@@ -269,7 +281,7 @@ namespace ODModelBuilderTF
                using var requirementFile = File.Create(tempRequirements);
                requirementsContent.CopyTo(requirementFile);
                requirementFile.Close();
-               if (zipEnv == null || zipTF == null) {
+               if (zipEnv == null || zipTF == null || zipPT == null) {
                   var pycocotoolsFileName = pycocotoolsRes[pycocotoolsRes.IndexOf("pycocotools")..];
                   using var pycocotoolsFile = File.Create(Path.Combine(virtualEnvPath, pycocotoolsFileName));
                   using var pycocotoolsContent = Assembly.GetExecutingAssembly().GetManifestResourceStream(pycocotoolsRes);

@@ -3,16 +3,16 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
-    <AssemblyName>ODModelBuilderTF_Redist_Win</AssemblyName>
-    <RootNamespace>ODModelBuilderTF_Redist_Win</RootNamespace>
+    <AssemblyName>ODModelBuilderTF_Redist_Win_PT</AssemblyName>
+    <RootNamespace>ODModelBuilderTF_Redist_Win_PT</RootNamespace>
     <VersionPrefix>$(ODModelBuilderRedistVersion)</VersionPrefix>
     <Authors>Luigi Generale</Authors>
-    <Product>ODModelBuilderTF redistributables</Product>
-    <Description>Windows redistributables for the ODModelBuilderTF library with object detection $(ObjectDetectionVersion)</Description>
+    <Product>ODModelBuilderTF PyTorch $(PyTorchVersion) redistributables</Product>
+    <Description>Windows redistributables for the ODModelBuilderTF library with PyTorch $(PyTorchVersion)</Description>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\ODModelBuilderTF.snk</AssemblyOriginatorKeyFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageId>$(PrefixID)ODModelBuilderTF-Redist-Win</PackageId>
+    <PackageId>$(PrefixID)ODModelBuilderTF-Redist-Win-PT</PackageId>
     <PackageLicenseExpression />
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <NeutralLanguage />
@@ -44,7 +44,7 @@
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
   </Target>
-
+  
   <UsingTask TaskName="ZipPyEnvironment" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
     <ParameterGroup />
     <Task>
@@ -53,28 +53,22 @@
       <Reference Include="System.IO.Compression.ZipFile" />
       <Using Namespace="System.IO.Compression" />
       <Code Type="Fragment" Language="cs">
-        Log.LogMessage(MessageImportance.High, "Create the zip with the object detection environment");
+        Log.LogMessage(MessageImportance.High, "Create the zip with the PyTorch package");
         if (File.Exists(@"$(TargetDir)env.zip"))
           File.Delete(@"$(TargetDir)env.zip");
         using (var archive = ZipFile.Open(@"$(TargetDir)env.zip", ZipArchiveMode.Create)) {
           var fullPathLen = @"$(PythonProject)env".Length + 1;
           foreach (var path in Directory.GetFiles(@"$(PythonProject)env", "*.*", SearchOption.AllDirectories)) {
-            if (path.Contains("__pycache__") || Directory.Exists(path))
+            if (Directory.Exists(path))
               continue;
             var relPath = path.Substring(fullPathLen);
             var relPathToLower = relPath.ToLower();
             if (relPathToLower.Contains(@"__pycache__"))
               continue;
-            if (relPathToLower.StartsWith(@"scripts"))
-              continue;
-            if (relPathToLower.Contains(@"site-packages\tensorflow"))
-              continue;
-            if (relPathToLower.Contains(@"site-packages\torch"))
-              continue;
-            if (relPathToLower.Contains(@"custom-tf"))
+            if (!relPathToLower.Contains(@"site-packages\torch"))
               continue;
             Log.LogMessage(MessageImportance.Low, "Adding " + path);
-            archive.CreateEntryFromFile(path, relPath);
+            archive.CreateEntryFromFile(path, relPath, CompressionLevel.Optimal);
           }
         }
       </Code>

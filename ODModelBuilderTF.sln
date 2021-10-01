@@ -54,6 +54,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ODModelBuilderTF_Redist_Win
 		{BF17799B-E8E4-4441-9F34-25B050033535} = {BF17799B-E8E4-4441-9F34-25B050033535}
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ODModelBuilderTF_Redist_Win_PT", "ODModelBuilderTF_Redist_Win_PT\ODModelBuilderTF_Redist_Win_PT.csproj", "{31588658-440F-4171-ABBE-498ADBB6B78B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BF17799B-E8E4-4441-9F34-25B050033535} = {BF17799B-E8E4-4441-9F34-25B050033535}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -92,6 +97,10 @@ Global
 		{CE312982-85F0-418F-964D-9ED3AC267CED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CE312982-85F0-418F-964D-9ED3AC267CED}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CE312982-85F0-418F-964D-9ED3AC267CED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{31588658-440F-4171-ABBE-498ADBB6B78B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{31588658-440F-4171-ABBE-498ADBB6B78B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{31588658-440F-4171-ABBE-498ADBB6B78B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{31588658-440F-4171-ABBE-498ADBB6B78B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

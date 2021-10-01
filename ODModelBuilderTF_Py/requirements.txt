@@ -108,6 +108,8 @@ tf-models-official==2.6.0
 tf-slim==1.1.0
 tf2onnx==1.9.1
 threadpoolctl==2.2.0
+torch==1.9.1
+torchvision==0.10.1
 tqdm==4.62.2
 typeguard==2.12.1
 typing-extensions==3.7.4.3

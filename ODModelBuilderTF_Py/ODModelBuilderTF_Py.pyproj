@@ -23,6 +23,7 @@
     <Environment>_CUDA_VISIBLE_DEVICES=-1</Environment>
     <IsWindowsApplication>False</IsWindowsApplication>
     <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
+    <SuppressConfigureTestFrameworkPrompt>true</SuppressConfigureTestFrameworkPrompt>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -60,11 +61,21 @@
     <Compile Include="mount_google_drive.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="export_main.py" />
-    <Compile Include="export_parameters.py" />
-    <Compile Include="export_environment.py" />
-    <Compile Include="eval_environment.py" />
-    <Compile Include="eval_parameters.py" />
+    <Compile Include="export_main.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="export_parameters.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="export_environment.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="eval_environment.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="eval_parameters.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="train_pipeline.py">
       <SubType>Code</SubType>
     </Compile>
@@ -108,6 +119,9 @@
     <Content Include="ODModelBuilderTF_ipynb_to_py.bat" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Packages\" />
+  </ItemGroup>
+  <ItemGroup>
     <Interpreter Include="env\">
       <Id>env</Id>
       <Version>3.7</Version>
@@ -117,9 +131,6 @@
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
       <Architecture>X64</Architecture>
     </Interpreter>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Packages\" />
   </ItemGroup>
   <ItemGroup>
     <OutputFiles Include="$(OutputPath)env\env.info">
@@ -154,9 +165,9 @@
                 rTrim = rTrim.Substring(req.Length).TrimStart();
                 var opList = new[] { '&lt;', '&gt;', '=', '!', '~' };
                 var op = "";
-                if (rTrim.Length > 0 &amp;&amp; !opList.Any(c =&gt; c == rTrim[0]))
+                if (rTrim.Length &gt; 0 &amp;&amp; !opList.Any(c =&gt; c == rTrim[0]))
                   continue;
-                while (rTrim.Length > 0 &amp;&amp; opList.Any(c =&gt; c == rTrim[0])) {
+                while (rTrim.Length &gt; 0 &amp;&amp; opList.Any(c =&gt; c == rTrim[0])) {
                   op = op + new string(rTrim[0], 1);
                   rTrim = rTrim.Substring(1).TrimStart();
                 }
@@ -238,7 +249,7 @@
               }
               ixStart = l.ToLower().IndexOf("tensorflow");
               if (ixStart &gt; -1) {
-                var release = new string(l.ToCharArray().Skip(ixStart + "tensorflow".Length).SkipWhile(c =&gt; new[] { ' ',  '\t', '&gt;', '=' }.Any(cs => cs == c)).TakeWhile(c =&gt; c != ' ' &amp;&amp; c != '\t' &amp;&amp; c != '\\').ToArray());
+                var release = new string(l.ToCharArray().Skip(ixStart + "tensorflow".Length).SkipWhile(c =&gt; new[] { ' ',  '\t', '&gt;', '=' }.Any(cs =&gt; cs == c)).TakeWhile(c =&gt; c != ' ' &amp;&amp; c != '\t' &amp;&amp; c != '\\').ToArray());
                 if (release != "$(TensorFlowVersion)") {
                   ipynb[i] = ipynb[i].Replace(release, "$(TensorFlowVersion)");
                   writeIpynb = true;

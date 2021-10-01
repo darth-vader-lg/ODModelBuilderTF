@@ -4,3 +4,5 @@ object-detection==2.6.0
 onnx==1.10.1
 tensorflow>=2.6.0
 tf2onnx==1.9.1
+torch==1.9.1
+torchvision==0.10.1
