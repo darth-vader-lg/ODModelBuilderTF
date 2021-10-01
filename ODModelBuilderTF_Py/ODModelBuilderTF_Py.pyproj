@@ -102,6 +102,156 @@
     <Compile Include="train_parameters.py">
       <SubType>Code</SubType>
     </Compile>
+    <Content Include="yolov5\.dockerignore" />
+    <Content Include="yolov5\.gitattributes" />
+    <Content Include="yolov5\.gitignore" />
+    <Compile Include="yolov5\detect.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Content Include="yolov5\Dockerfile" />
+    <Compile Include="yolov5\export.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\hubconf.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Content Include="yolov5\LICENSE" />
+    <Content Include="yolov5\README.md" />
+    <Content Include="yolov5\requirements.txt" />
+    <Compile Include="yolov5\setup.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\train.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Content Include="yolov5\tutorial.ipynb" />
+    <Compile Include="yolov5\val.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Content Include="yolov5\data\Argoverse.yaml" />
+    <Content Include="yolov5\data\coco.yaml" />
+    <Content Include="yolov5\data\coco128.yaml" />
+    <Content Include="yolov5\data\GlobalWheat2020.yaml" />
+    <Content Include="yolov5\data\hyps\hyp.finetune.yaml" />
+    <Content Include="yolov5\data\hyps\hyp.finetune_objects365.yaml" />
+    <Content Include="yolov5\data\hyps\hyp.scratch-p6.yaml" />
+    <Content Include="yolov5\data\hyps\hyp.scratch.yaml" />
+    <Content Include="yolov5\data\images\bus.jpg" />
+    <Content Include="yolov5\data\images\zidane.jpg" />
+    <Content Include="yolov5\data\objects365.yaml" />
+    <Content Include="yolov5\data\scripts\download_weights.sh" />
+    <Content Include="yolov5\data\scripts\get_coco.sh" />
+    <Content Include="yolov5\data\scripts\get_coco128.sh" />
+    <Content Include="yolov5\data\SKU-110K.yaml" />
+    <Content Include="yolov5\data\VisDrone.yaml" />
+    <Content Include="yolov5\data\voc.yaml" />
+    <Content Include="yolov5\data\xView.yaml" />
+    <Compile Include="yolov5\models\common.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\models\experimental.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\models\yolo.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Content Include="yolov5\models\yolov5l.yaml" />
+    <Content Include="yolov5\models\yolov5m.yaml" />
+    <Content Include="yolov5\models\yolov5s.yaml" />
+    <Content Include="yolov5\models\yolov5x.yaml" />
+    <Compile Include="yolov5\models\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Content Include="yolov5\models\hub\anchors.yaml" />
+    <Content Include="yolov5\models\hub\yolov3-spp.yaml" />
+    <Content Include="yolov5\models\hub\yolov3-tiny.yaml" />
+    <Content Include="yolov5\models\hub\yolov3.yaml" />
+    <Content Include="yolov5\models\hub\yolov5-bifpn.yaml" />
+    <Content Include="yolov5\models\hub\yolov5-fpn.yaml" />
+    <Content Include="yolov5\models\hub\yolov5-p2.yaml" />
+    <Content Include="yolov5\models\hub\yolov5-p6.yaml" />
+    <Content Include="yolov5\models\hub\yolov5-p7.yaml" />
+    <Content Include="yolov5\models\hub\yolov5-panet.yaml" />
+    <Content Include="yolov5\models\hub\yolov5l6.yaml" />
+    <Content Include="yolov5\models\hub\yolov5m6.yaml" />
+    <Content Include="yolov5\models\hub\yolov5s-ghost.yaml" />
+    <Content Include="yolov5\models\hub\yolov5s-transformer.yaml" />
+    <Content Include="yolov5\models\hub\yolov5s6.yaml" />
+    <Content Include="yolov5\models\hub\yolov5x6.yaml" />
+    <Compile Include="yolov5\utils\activations.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\utils\augmentations.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\utils\autoanchor.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\utils\aws\resume.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\utils\aws\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\utils\callbacks.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\utils\datasets.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\utils\downloads.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\utils\flask_rest_api\example_request.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\utils\flask_rest_api\restapi.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\utils\general.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Content Include="yolov5\utils\aws\mime.sh" />
+    <Content Include="yolov5\utils\aws\userdata.sh" />
+    <Content Include="yolov5\utils\flask_rest_api\README.md" />
+    <Content Include="yolov5\utils\google_app_engine\additional_requirements.txt" />
+    <Content Include="yolov5\utils\google_app_engine\app.yaml" />
+    <Content Include="yolov5\utils\google_app_engine\Dockerfile" />
+    <Compile Include="yolov5\utils\loggers\wandb\log_dataset.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Content Include="yolov5\utils\loggers\wandb\README.md" />
+    <Compile Include="yolov5\utils\loggers\wandb\sweep.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Content Include="yolov5\utils\loggers\wandb\sweep.yaml" />
+    <Compile Include="yolov5\utils\loggers\wandb\wandb_utils.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\utils\loggers\wandb\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\utils\loggers\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\utils\loss.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\utils\metrics.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\utils\plots.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\utils\torch_utils.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="yolov5\utils\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Activate.cmd.txt" />
@@ -120,6 +270,19 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Packages\" />
+    <Folder Include="yolov5\" />
+    <Folder Include="yolov5\data\" />
+    <Folder Include="yolov5\data\hyps\" />
+    <Folder Include="yolov5\data\images\" />
+    <Folder Include="yolov5\data\scripts\" />
+    <Folder Include="yolov5\models\" />
+    <Folder Include="yolov5\models\hub\" />
+    <Folder Include="yolov5\utils\" />
+    <Folder Include="yolov5\utils\aws\" />
+    <Folder Include="yolov5\utils\flask_rest_api\" />
+    <Folder Include="yolov5\utils\google_app_engine\" />
+    <Folder Include="yolov5\utils\loggers\" />
+    <Folder Include="yolov5\utils\loggers\wandb\" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="env\">

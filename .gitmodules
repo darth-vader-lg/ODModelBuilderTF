@@ -1,3 +1,6 @@
 [submodule "SyncJupyterNotebook"]
 	path = SyncJupyterNotebook
 	url = https://github.com/darth-vader-lg/SyncJupyterNotebook.git
+[submodule "ODModelBuilderTF_Py/yolov5"]
+	path = ODModelBuilderTF_Py/yolov5
+	url = https://github.com/darth-vader-lg/yolov5.git

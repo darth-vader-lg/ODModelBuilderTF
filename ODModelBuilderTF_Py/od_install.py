@@ -230,21 +230,70 @@ def install_object_detection(requirements:str=None, no_cache=True):
         shutil.copy2('object_detection/packages/tf2/setup.py', '.')
         install('.', install_extra_args)
         packages_to_check.append('object-detection')
-        # Uninstall the dataclasses package installed erroneusly (incompatible) for python >=3.7 by tf-models-official
-        try:
-            import pkg_resources, importlib
-            importlib.reload(pkg_resources)
-            pkg_resources.require('dataclasses')
-            uninstall('dataclasses')
-        except Exception as e: pass
         # Return to the original directory
         os.chdir(currentDir)
+        
+    # Directory of the YoloV5 object detection api and commit id
+    is_installed = False
+    if (os.path.exists('yolov5')):
+        yolov5_api_dir = os.path.abspath('yolov5')
+    else:
+        yolov5_api_git_repo = _get_special_requirement(requirements, 'yolov5-repo', '#@')
+        yolov5_api_git_ref = _get_special_requirement(requirements, 'yolov5-ref', '#@')
+        if (os.path.isdir(yolov5_api_git_repo)):
+            yolov5_api_dir = yolov5_api_git_repo
+        else:
+            yolov5_api_dir = os.path.join(tempfile.gettempdir(), 'yolov5-api-' + yolov5_api_git_ref.replace('/', '_'))
+        # Install the Yolov5 object detection api
+        try:
+            if (get_package_info('yolov5').version):
+                repo = pygit2.Repository(yolov5_api_dir)
+                if ((yolov5_api_dir == yolov5_api_git_repo) or (repo.head.target.hex == repo.resolve_refish(yolov5_api_git_ref)[0].oid.hex)):
+                    is_installed = True
+        except: pass
+        # Install the YoloV5 api
+        if (not is_installed):
+            # Install from git
+            try:
+                repo = pygit2.Repository(yolov5_api_dir)
+            except:
+                # Create the callback for the progress
+                callbacks = GitCallbacks();
+                # Clone the TensorFlow models repository
+                print('Cloning the YoloV5 object detection api repository')
+                pygit2.clone_repository(yolov5_api_git_repo, yolov5_api_dir, callbacks = callbacks)
+                print('YoloV5 object detection api repository cloned')
+                repo = pygit2.Repository(yolov5_api_dir)
+            # Checkout the well known commit
+            print(f'Checkout of the YoloV5 api repository at {yolov5_api_git_ref}')
+            (commit, reference) = repo.resolve_refish(yolov5_api_git_ref)
+            try:
+                repo.checkout_tree(commit)
+            except: pass
+            repo.reset(commit.oid, pygit2.GIT_RESET_HARD if yolov5_api_dir != yolov5_api_git_repo else pygit2.GIT_RESET_SOFT)
+    if (not is_installed and yolov5_api_dir):
+        # Move to the yolo dir
+        currentDir = os.getcwd()
+        os.chdir(yolov5_api_dir)
+        install('.', install_extra_args)
+        packages_to_check.append('yolov5')
+        # Return to the original directory
+        os.chdir(currentDir)
+
+    # Uninstall the dataclasses package installed erroneusly (incompatible) for python >=3.7 by tf-models-official
+    try:
+        import pkg_resources, importlib
+        importlib.reload(pkg_resources)
+        pkg_resources.require('dataclasses')
+        uninstall('dataclasses')
+    except Exception as e: pass
     
     # Append of the paths
     paths = [
         os.path.join(od_api_dir, 'research'),
         os.path.join(od_api_dir, 'research', 'slim'),
         os.path.join(od_api_dir, 'research', 'object_detection'),
+        yolov5_api_dir,
         ]
     for path in paths:
         if (not path in sys.path):
